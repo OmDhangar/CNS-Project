@@ -1,0 +1,16 @@
+[cache] nd_toy_multi_r6_t256_w32d2.pt  val-acc 52.192%
+AttackSetup: 8-round TinyDES-24, 6-round approximation on rounds 1..6
+  front guess: K_0 bits feeding S-box 2 (6 bits, output mask 0x1)
+  back  guess: K_7 bits feeding S-box 1 (6 bits, output mask 0x5)
+  |GK| = 4096
+  approximation p = 0.503396  (bias 2^-8.20)
+  distinguisher ND_6^256: validation accuracy 52.192% (fixed-p Bayes reference 52.169%)
+  data per attack N*t = 524,288  (N = 2048, t = 256)
+  guided search stopping rule: posterior >= 0.95 (calibrated on 30 independent trials)
+  matched budget for the budgeted controls: 1546 (37.7% of |GK|)
+  scikit-optimize: budget 100, 10 trials (its GP refit dominates its runtime)
+
+WrongKeyProfile: |rho_f| >= 0.5 for 7/64 differences, |rho_b| >= 0.5 for 2/64;
+  one query informs 14 of 4096 hypotheses at the 0.3 level (0.3%)
+  rho independent of the key: front=True, back=True
+

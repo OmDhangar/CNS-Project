@@ -1,0 +1,15 @@
+{
+  "config": "l3",
+  "rounds": 3,
+  "cipher_rounds": 5,
+  "t": 16,
+  "nt": 320,
+  "trials": 20,
+  "space": 4096,
+  "p_measured": 0.69586181640625,
+  "val_acc": 0.793874979019165,
+  "bayes_acc": 0.7937728760859554,
+  "j_front": 0,
+  "j_back": 0,
+  "exhaustive_success": 1.0
+}

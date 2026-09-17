@@ -1,0 +1,461 @@
+{
+  "stop_posterior": 0.95,
+  "nt": 524288,
+  "t": 256,
+  "trials": 30,
+  "seed": 1000003,
+  "exhaustive_success": 0.6666666666666666,
+  "agreement": 0.9666666666666667,
+  "success": 0.6666666666666666,
+  "queries_median": 1546.0,
+  "sweep_z": [
+    {
+      "stop_z": 3.0,
+      "queries_median": 52.0,
+      "queries_mean": 110.4,
+      "queries_p95": 365.2499999999998,
+      "queries_frac_median": 0.0126953125,
+      "agreement": 0.4,
+      "success": 0.3333333333333333
+    },
+    {
+      "stop_z": 3.25,
+      "queries_median": 116.0,
+      "queries_mean": 196.86666666666667,
+      "queries_p95": 546.0499999999998,
+      "queries_frac_median": 0.0283203125,
+      "agreement": 0.4666666666666667,
+      "success": 0.43333333333333335
+    },
+    {
+      "stop_z": 3.5,
+      "queries_median": 125.5,
+      "queries_mean": 282.56666666666666,
+      "queries_p95": 879.8999999999995,
+      "queries_frac_median": 0.0306396484375,
+      "agreement": 0.5333333333333333,
+      "success": 0.4
+    },
+    {
+      "stop_z": 3.75,
+      "queries_median": 208.0,
+      "queries_mean": 397.3333333333333,
+      "queries_p95": 1319.1499999999985,
+      "queries_frac_median": 0.05078125,
+      "agreement": 0.6,
+      "success": 0.4
+    },
+    {
+      "stop_z": 4.0,
+      "queries_median": 352.5,
+      "queries_mean": 561.5,
+      "queries_p95": 1712.1499999999987,
+      "queries_frac_median": 0.0860595703125,
+      "agreement": 0.7,
+      "success": 0.4666666666666667
+    },
+    {
+      "stop_z": 4.25,
+      "queries_median": 437.0,
+      "queries_mean": 731.3333333333334,
+      "queries_p95": 2290.999999999999,
+      "queries_frac_median": 0.106689453125,
+      "agreement": 0.7666666666666667,
+      "success": 0.5333333333333333
+    },
+    {
+      "stop_z": 4.5,
+      "queries_median": 680.0,
+      "queries_mean": 1031.7333333333333,
+      "queries_p95": 2764.3499999999985,
+      "queries_frac_median": 0.166015625,
+      "agreement": 0.8333333333333334,
+      "success": 0.5666666666666667
+    },
+    {
+      "stop_z": 4.75,
+      "queries_median": 863.5,
+      "queries_mean": 1278.4333333333334,
+      "queries_p95": 3346.549999999999,
+      "queries_frac_median": 0.2108154296875,
+      "agreement": 0.8666666666666667,
+      "success": 0.6
+    },
+    {
+      "stop_z": 5.0,
+      "queries_median": 1342.0,
+      "queries_mean": 1585.5333333333333,
+      "queries_p95": 3845.9499999999994,
+      "queries_frac_median": 0.32763671875,
+      "agreement": 0.9,
+      "success": 0.6
+    },
+    {
+      "stop_z": 5.25,
+      "queries_median": 1886.5,
+      "queries_mean": 2089.6666666666665,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.4605712890625,
+      "agreement": 0.9666666666666667,
+      "success": 0.6333333333333333
+    },
+    {
+      "stop_z": 5.5,
+      "queries_median": 2352.5,
+      "queries_mean": 2428.5666666666666,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.5743408203125,
+      "agreement": 0.9666666666666667,
+      "success": 0.6333333333333333
+    },
+    {
+      "stop_z": 5.75,
+      "queries_median": 2818.0,
+      "queries_mean": 2694.1666666666665,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.68798828125,
+      "agreement": 0.9666666666666667,
+      "success": 0.6333333333333333
+    },
+    {
+      "stop_z": 6.0,
+      "queries_median": 3364.5,
+      "queries_mean": 2903.9333333333334,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.8214111328125,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 6.25,
+      "queries_median": 4032.0,
+      "queries_mean": 3138.633333333333,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.984375,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 6.5,
+      "queries_median": 4096.0,
+      "queries_mean": 3334.5,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 6.75,
+      "queries_median": 4096.0,
+      "queries_mean": 3509.1666666666665,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 7.0,
+      "queries_median": 4096.0,
+      "queries_mean": 3624.4,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 7.25,
+      "queries_median": 4096.0,
+      "queries_mean": 3735.733333333333,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 7.5,
+      "queries_median": 4096.0,
+      "queries_mean": 3819.633333333333,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 7.75,
+      "queries_median": 4096.0,
+      "queries_mean": 3880.266666666667,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 8.0,
+      "queries_median": 4096.0,
+      "queries_mean": 3960.5333333333333,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 8.25,
+      "queries_median": 4096.0,
+      "queries_mean": 3999.0666666666666,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 8.5,
+      "queries_median": 4096.0,
+      "queries_mean": 4019.366666666667,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 8.75,
+      "queries_median": 4096.0,
+      "queries_mean": 4023.9666666666667,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_z": 9.0,
+      "queries_median": 4096.0,
+      "queries_mean": 4028.866666666667,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    }
+  ],
+  "sweep_posterior": [
+    {
+      "stop_posterior": 0.3,
+      "queries_median": 66.0,
+      "queries_mean": 130.06666666666666,
+      "queries_p95": 487.7499999999999,
+      "queries_frac_median": 0.01611328125,
+      "agreement": 0.4,
+      "success": 0.3333333333333333
+    },
+    {
+      "stop_posterior": 0.4,
+      "queries_median": 117.0,
+      "queries_mean": 164.43333333333334,
+      "queries_p95": 541.5499999999998,
+      "queries_frac_median": 0.028564453125,
+      "agreement": 0.4666666666666667,
+      "success": 0.36666666666666664
+    },
+    {
+      "stop_posterior": 0.5,
+      "queries_median": 167.5,
+      "queries_mean": 255.86666666666667,
+      "queries_p95": 879.3499999999997,
+      "queries_frac_median": 0.0408935546875,
+      "agreement": 0.5666666666666667,
+      "success": 0.4
+    },
+    {
+      "stop_posterior": 0.6,
+      "queries_median": 203.0,
+      "queries_mean": 373.1,
+      "queries_p95": 1397.9499999999982,
+      "queries_frac_median": 0.049560546875,
+      "agreement": 0.6,
+      "success": 0.43333333333333335
+    },
+    {
+      "stop_posterior": 0.7,
+      "queries_median": 284.5,
+      "queries_mean": 627.1,
+      "queries_p95": 2461.699999999997,
+      "queries_frac_median": 0.0694580078125,
+      "agreement": 0.6666666666666666,
+      "success": 0.5
+    },
+    {
+      "stop_posterior": 0.75,
+      "queries_median": 446.0,
+      "queries_mean": 785.8,
+      "queries_p95": 2670.2999999999984,
+      "queries_frac_median": 0.10888671875,
+      "agreement": 0.7333333333333333,
+      "success": 0.5333333333333333
+    },
+    {
+      "stop_posterior": 0.8,
+      "queries_median": 506.5,
+      "queries_mean": 977.8,
+      "queries_p95": 3313.699999999999,
+      "queries_frac_median": 0.1236572265625,
+      "agreement": 0.7666666666666667,
+      "success": 0.5333333333333333
+    },
+    {
+      "stop_posterior": 0.85,
+      "queries_median": 1039.5,
+      "queries_mean": 1246.4333333333334,
+      "queries_p95": 3617.699999999998,
+      "queries_frac_median": 0.2537841796875,
+      "agreement": 0.8333333333333334,
+      "success": 0.5666666666666667
+    },
+    {
+      "stop_posterior": 0.9,
+      "queries_median": 1216.0,
+      "queries_mean": 1650.7333333333333,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.296875,
+      "agreement": 0.9333333333333333,
+      "success": 0.6333333333333333
+    },
+    {
+      "stop_posterior": 0.95,
+      "queries_median": 1546.0,
+      "queries_mean": 1977.8,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.37744140625,
+      "agreement": 0.9666666666666667,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_posterior": 0.975,
+      "queries_median": 2036.5,
+      "queries_mean": 2415.0,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.4971923828125,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_posterior": 0.99,
+      "queries_median": 2981.5,
+      "queries_mean": 2778.2,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.7279052734375,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_posterior": 0.995,
+      "queries_median": 3259.0,
+      "queries_mean": 3024.266666666667,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.795654296875,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_posterior": 0.999,
+      "queries_median": 3988.0,
+      "queries_mean": 3371.5,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 0.9736328125,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    },
+    {
+      "stop_posterior": 0.9999,
+      "queries_median": 4096.0,
+      "queries_mean": 3732.866666666667,
+      "queries_p95": 4096.0,
+      "queries_frac_median": 1.0,
+      "agreement": 1.0,
+      "success": 0.6666666666666666
+    }
+  ],
+  "budget_sweep": [
+    {
+      "budget_frac": 0.01,
+      "budget": 41,
+      "success": 0.13333333333333333,
+      "agreement": 0.13333333333333333
+    },
+    {
+      "budget_frac": 0.02,
+      "budget": 82,
+      "success": 0.3,
+      "agreement": 0.3333333333333333
+    },
+    {
+      "budget_frac": 0.03,
+      "budget": 123,
+      "success": 0.4,
+      "agreement": 0.43333333333333335
+    },
+    {
+      "budget_frac": 0.05,
+      "budget": 205,
+      "success": 0.43333333333333335,
+      "agreement": 0.5666666666666667
+    },
+    {
+      "budget_frac": 0.075,
+      "budget": 307,
+      "success": 0.5666666666666667,
+      "agreement": 0.7
+    },
+    {
+      "budget_frac": 0.1,
+      "budget": 410,
+      "success": 0.5666666666666667,
+      "agreement": 0.7666666666666667
+    },
+    {
+      "budget_frac": 0.15,
+      "budget": 614,
+      "success": 0.6333333333333333,
+      "agreement": 0.9333333333333333
+    },
+    {
+      "budget_frac": 0.2,
+      "budget": 819,
+      "success": 0.6333333333333333,
+      "agreement": 0.9333333333333333
+    },
+    {
+      "budget_frac": 0.25,
+      "budget": 1024,
+      "success": 0.6333333333333333,
+      "agreement": 0.9666666666666667
+    },
+    {
+      "budget_frac": 0.3,
+      "budget": 1229,
+      "success": 0.6333333333333333,
+      "agreement": 0.9666666666666667
+    },
+    {
+      "budget_frac": 0.4,
+      "budget": 1638,
+      "success": 0.6333333333333333,
+      "agreement": 0.9666666666666667
+    },
+    {
+      "budget_frac": 0.5,
+      "budget": 2048,
+      "success": 0.6333333333333333,
+      "agreement": 0.9666666666666667
+    },
+    {
+      "budget_frac": 0.75,
+      "budget": 3072,
+      "success": 0.6666666666666666,
+      "agreement": 1.0
+    },
+    {
+      "budget_frac": 1.0,
+      "budget": 4096,
+      "success": 0.6666666666666666,
+      "agreement": 1.0
+    }
+  ]
+}

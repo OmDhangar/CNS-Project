@@ -1,0 +1,66 @@
+==============================================================================
+1.  Linear approximations of TinyDES-24 and the distinguishers built on them
+==============================================================================
+L3: 3-round linear approximation of TinyDES-24
+  a_in  (mask on L_in)  = 0x429
+  b_in  (mask on R_in)  = 0x001   active S-box(es) [0]
+  a_out (mask on L_out) = 0x001   active S-box(es) [0]
+  b_out (mask on R_out) = 0x429
+  key masks per round   = ['0x00010', '0x00000', '0x00010']
+  piling-up correlation = +0.316406   (p = 0.658203, bias = 0.158203 = 2^-2.66)
+  MEASURED p            = 0.658095   (bias = 0.158095 = 2^-2.66, 16,777,216 samples)
+
+L4: 4-round linear approximation of TinyDES-24
+  a_in  (mask on L_in)  = 0x429
+  b_in  (mask on R_in)  = 0x001   active S-box(es) [0]
+  a_out (mask on L_out) = 0x420   active S-box(es) [0]
+  b_out (mask on R_out) = 0x001
+  key masks per round   = ['0x00010', '0x00000', '0x00010', '0x00012']
+  piling-up correlation = +0.0395508   (p = 0.519775, bias = 0.0197754 = 2^-5.66)
+  MEASURED p            = 0.519803   (bias = 0.019803 = 2^-5.66, 16,777,216 samples)
+
+L5: 5-round linear approximation of TinyDES-24
+  a_in  (mask on L_in)  = 0x000
+  b_in  (mask on R_in)  = 0x140   active S-box(es) [1]
+  a_out (mask on L_out) = 0x940   active S-box(es) [1]
+  b_out (mask on R_out) = 0x000
+  key masks per round   = ['0x00000', '0x00480', '0x02000', '0x00480', '0x00000']
+  piling-up correlation = -0.0175781   (p = 0.491211, bias = 0.00878906 = 2^-6.83)
+  MEASURED p            = 0.491482   (bias = 0.0085175 = 2^-6.88, 16,777,216 samples)
+
+L6: 6-round linear approximation of TinyDES-24
+  a_in  (mask on L_in)  = 0x940
+  b_in  (mask on R_in)  = 0x010   active S-box(es) [2]
+  a_out (mask on L_out) = 0x140   active S-box(es) [1]
+  b_out (mask on R_out) = 0x000
+  key masks per round   = ['0x00400', '0x00000', '0x00480', '0x02000', '0x00480', '0x00000']
+  piling-up correlation = +0.0065918   (p = 0.503296, bias = 0.0032959 = 2^-8.25)
+  MEASURED p            = 0.503396   (bias = 0.00339586 = 2^-8.20, 16,777,216 samples)
+
+==============================================================================
+2.  One-bit key recovery: ML-aided (Eq. 6 + CRD) vs Matsui's Algorithm 1
+==============================================================================
+  L3: t =    8, N =    5, N*t =     40 (bias^-2 =       40)   ND acc 81.62% (ref 81.33%)   ML Eq.2  98.7%   ML sym  98.7%   Matsui  97.3%
+  L4: t =   16, N =  160, N*t =   2560 (bias^-2 =     2550)   ND acc 56.45% (ref 56.20%)   ML Eq.2  83.7%   ML sym  97.0%   Matsui  97.7%
+  L5: t =   32, N =  430, N*t =  13760 (bias^-2 =    13784)   ND acc 54.15% (ref 53.81%)   ML Eq.2  98.0%   ML sym  98.0%   Matsui  98.0%
+  L6: t =   64, N = 1355, N*t =  86720 (bias^-2 =    86716)   ND acc 52.24% (ref 52.16%)   ML Eq.2  96.0%   ML sym  96.0%   Matsui  97.7%
+
+==============================================================================
+3.  Multi-bit key recovery (Algorithm 2) on 8-round TinyDES-24, |GK| = 4096
+==============================================================================
+AttackSetup: 8-round TinyDES-24, 6-round approximation on rounds 1..6
+  front guess: K_0 bits feeding S-box 2 (6 bits, output mask 0x1)
+  back  guess: K_7 bits feeding S-box 1 (6 bits, output mask 0x5)
+  |GK| = 4096
+  approximation p = 0.503396  (bias 2^-8.20)
+  ND_6^256 accuracy 52.192% (fixed-p Bayes reference 52.169%)
+
+       N*t      N   ML-aided Alg.2   Matsui Alg.2   mean rank     time
+----------------------------------------------------------------------
+   524,288   2048            50.0%          67.5%         4.7   26.55s
+   655,360   2560            80.0%          85.0%         0.8    6.84s
+   786,432   3072            92.5%          90.0%         0.4    7.28s
+   917,504   3584            97.5%          97.5%         0.0    7.52s
+ 1,048,576   4096           100.0%         100.0%         0.0    8.47s
+
+wrote results to D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results
