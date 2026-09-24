@@ -58,8 +58,11 @@ kernel, which is the linear-cryptanalysis analogue of the empirical wrong-key
 response profile Gohr (2019, §4.3) feeds to his differential-side key search.
 
 The search maintains the exact posterior over all 4096 hypotheses at a cost far
-below one distinguisher evaluation, queries the current maximum-a-posteriori
-candidate, and stops when the posterior concentrates.
+below one distinguisher evaluation and queries the current
+maximum-a-posteriori candidate. It is run to a **fixed budget**: an optional
+early-stopping rule is implemented and calibrated, but we measured it to be
+worse than simply choosing a budget at matched quality, so the budget curve is
+what the results lead with (see `report/FACULTY_SUMMARY.md`, Sect. 6).
 
 ## 3. Target ciphers
 
@@ -121,6 +124,7 @@ experiments/
   exp2_guided_vs_bruteforce.py    headline head-to-head
   exp3_budget_sensitivity.py      success rate vs query budget (the headline figure)
   exp4_phase2_des_reduced_round.py  the same search, on real 8-round DES
+  exp5_opening_design.py          does a covering opening design help? (it does not)
   make_plots.py                   render every figure from the CSVs
 tests/
   test_cipher_and_masks.py        roundtrip, bijectivity, mask algebra, exact LAT
@@ -128,8 +132,10 @@ tests/
                                   and that the offline profile predicts the real surface
 results/                          CSVs + figures (auto-generated)
 report/
-  approach_and_findings.md        plain-language walkthrough: the idea, the results,
-                                  and an honest account of what we got wrong
+  FACULTY_SUMMARY.md              evaluation-facing: the algorithm, the methodology,
+                                  every result table, improvements and negative results
+  approach_and_findings.md        plain-language walkthrough and an honest account
+                                  of what we got wrong along the way
   project_report.md               the results write-up (assembled from the CSVs)
 ```
 
@@ -137,7 +143,8 @@ report/
 
 ```bash
 pip install -r requirements.txt
-python run_all.py            # everything, in order (--quick for a smoke test)
+python run_all.py --preset demo       # ~10 min
+python run_all.py --preset full       # ~3 h, the reported trial counts
 ```
 
 or stage by stage:
@@ -177,6 +184,10 @@ Trained distinguishers and the verified approximation table are cached in
   for its Bernoulli problem, so "the network is good enough" is a measured
   claim rather than an assumption.
 
+* `report/FACULTY_SUMMARY.md` -- the evaluation-facing document: the algorithm in
+  pseudocode, the methodology commitments, all result tables against the paper's
+  own numbers, the improvements we made to the paper's pipeline, and the
+  negative results.
 * `report/approach_and_findings.md` -- the readable overview: what the paper does,
   what we added, comparison tables against the paper's own numbers, and a section
   on the mistakes we made (two of which were real flaws in our first reproduction

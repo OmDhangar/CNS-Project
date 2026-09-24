@@ -145,15 +145,32 @@ def sweep_threshold(trajs, field, thresholds, space, name):
     return rows
 
 
-def select_threshold(rows, ex_rate, tolerance_pp, name="stop_posterior"):
-    """Cheapest threshold whose success rate stays within tolerance of exhaustive.
+TARGET_AGREEMENT = 0.95
 
-    Selecting on success rather than on agreement is deliberate: agreement asks
-    "did we reproduce the scan's answer", but the question the paper reports is
-    "did we recover the subkey".
+
+def select_threshold(rows, ex_rate, tolerance_pp, name="stop_posterior",
+                     target_agreement=TARGET_AGREEMENT):
+    """Cheapest threshold that still reproduces the exhaustive scan's answer.
+
+    Selection is on **agreement**, not on success rate, and the reason is
+    variance rather than preference.  Agreement is a *paired* statistic: on each
+    trial it compares the search's answer with what the exhaustive scan returned
+    on that same trial, with the same data and the same network.  Success
+    compares two separately estimated rates, so the criterion "success within
+    1 pp of exhaustive" differences two noisy numbers, and on 25 trials a single
+    flipped trial moves the selected threshold from 0.90 to 0.99 -- which in
+    turn moves the reported cost from 23% of the candidate space to 100%.  We
+    measured exactly that swing between two seed sets before switching.
+
+    Agreement is also the conservative choice: a rule that reproduces the
+    scan's answer 95% of the time cannot lose much success rate relative to it.
+    Success is still reported as the outcome, it is just not what the threshold
+    is tuned on.
     """
-    ok = [r for r in rows if r["success"] >= ex_rate - tolerance_pp / 100.0]
-    return min(ok, key=lambda r: r["queries_median"]) if ok else rows[-1]
+    ok = [r for r in rows if r["agreement"] >= target_agreement]
+    if not ok:                      # nothing meets the bar: take the strictest
+        return max(rows, key=lambda r: r["agreement"])
+    return min(ok, key=lambda r: r["queries_median"])
 
 
 def print_sweep(rows, name):
@@ -164,6 +181,38 @@ def print_sweep(rows, name):
         print(f"{r[name]:>16.4f}{r['queries_median']:>14.0f}"
               f"{r['queries_frac_median'] * 100:>10.1f}%{r['queries_p95']:>14.0f}"
               f"{r['agreement'] * 100:>10.1f}%{r['success'] * 100:>9.1f}%")
+
+
+def operating_points(rows, targets=(0.80, 0.90, 0.95, 0.99), name="stop_posterior"):
+    """The cheapest threshold reaching each agreement target.
+
+    A single tuned point is a misleading way to report this.  The cost of
+    stopping is very sensitive to the agreement demanded -- on real DES the
+    difference between "92% agreement" and "95% agreement" is 10% of the
+    candidate space versus 40% -- so the honest presentation is the curve, with
+    several targets marked, and the reader choosing the trade-off.
+    """
+    out = []
+    for target in targets:
+        ok = [r for r in rows if r["agreement"] >= target]
+        if ok:
+            best = min(ok, key=lambda r: r["queries_median"])
+            out.append({"target_agreement": target, "reached": True, **best})
+        else:
+            out.append({"target_agreement": target, "reached": False,
+                        **max(rows, key=lambda r: r["agreement"])})
+    return out
+
+
+def print_operating_points(points, name="stop_posterior"):
+    print(f"{'target':>8}{name:>17}{'queries(med)':>14}{'% of |GK|':>11}"
+          f"{'agreement':>11}{'success':>10}")
+    print("-" * 71)
+    for p in points:
+        mark = "" if p["reached"] else "  (not reached)"
+        print(f"{p['target_agreement'] * 100:>7.0f}%{p[name]:>17.4f}"
+              f"{p['queries_median']:>14.0f}{p['queries_frac_median'] * 100:>10.1f}%"
+              f"{p['agreement'] * 100:>10.1f}%{p['success'] * 100:>9.1f}%{mark}")
 
 
 def announce_choice(chosen, ex_rate, tolerance_pp, name="stop_posterior"):

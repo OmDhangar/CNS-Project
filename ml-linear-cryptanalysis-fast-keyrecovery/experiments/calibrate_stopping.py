@@ -38,7 +38,8 @@ import os
 import numpy as np
 
 from common import (CALIBRATION_PATH, DEFAULT_NT, DEFAULT_T, POSTERIOR_GRID,
-                    ROOT, announce_choice, build, ensure_results, print_sweep,
+                    ROOT, announce_choice, build, ensure_results,
+                    operating_points, print_operating_points, print_sweep,
                     record_trajectories, select_threshold, sweep_threshold,
                     write_csv)
 
@@ -115,6 +116,12 @@ def main():
     print()
     print("early-stopping sweep B: posterior-concentration rule")
     print_sweep(prows, "stop_posterior")
+
+    points = operating_points(prows)
+    print()
+    print("operating points -- cheapest threshold reaching each agreement target:")
+    print_operating_points(points)
+    write_csv(os.path.join(ROOT, "results", "calibration_operating_points.csv"), points)
 
     chosen = select_threshold(prows, ex_rate, args.tolerance_pp)
     announce_choice(chosen, ex_rate, args.tolerance_pp)

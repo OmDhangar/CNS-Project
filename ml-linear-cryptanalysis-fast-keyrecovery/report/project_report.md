@@ -3,7 +3,7 @@
 **Extending** Hou, Ren & Chen, *"Improved machine learning-aided linear
 cryptanalysis: application to DES"*, Cybersecurity 8:22 (2025).
 
-*Generated 2026-09-17 from the CSVs in `results/`. Every number
+*Generated 2026-09-24 from the CSVs in `results/`. Every number
 below is produced by the scripts in `experiments/`; nothing is hand-copied.*
 
 ---
@@ -27,7 +27,7 @@ its conclusion names this as open work:
 
 **This project replaces Algorithm 2's `for gk in GK` loop, and nothing else.**
 The distinguisher, the CRD rule, the data and the candidate space are the
-paper's, reproduced unchanged. In one sentence: *(run the experiments to populate the headline numbers)*
+paper's, reproduced unchanged. In one sentence: at a fixed budget of **2227 of 4096 distinguisher evaluations (54% of exhaustive)** the guided search returns the same subkey as the full scan **98.7%** of the time, with a success-rate change of **+0.7 percentage points**. Uniform random sampling at the identical budget manages 54.7%. Section 6 gives the full budget curve, which is the result this project rests on.
 
 ## 2. Why a model-based search is possible here
 
@@ -53,14 +53,18 @@ data -- so they are computed in closed form, offline, in 2 x 64 x 64 operations
 reports `max(w0, w1)` over the two guesses of `gamma.K'`, the expected score
 profile is proportional to `|rho_f . rho_b|`.
 
-> *(figure `fig1_wrong_key_profile.png` not generated yet -- run `experiments/make_plots.py`)*
+![Figure 1. The wrong-key response profile, predicted offline from the S-boxes (left, centre) and checked against the score surface measured over 40 real attacks (right).](../results/figures/fig1_wrong_key_profile.png)
+
+*Figure 1. The wrong-key response profile, predicted offline from the S-boxes (left, centre) and checked against the score surface measured over 40 real attacks (right).*
 
 This is the linear-cryptanalysis counterpart of the wrong-key response profile
 Gohr (2019, Sect. 4.3) *measures empirically* for differential neural
 distinguishers and feeds to a Bayesian key search. Here it comes out in closed
 form, which is what lets the search start informed rather than cold.
 
-> *(figure `fig2_score_landscape.png` not generated yet -- run `experiments/make_plots.py`)*
+![Figure 2. One attack's complete CRD score surface over all 4096 candidate subkeys. The correct subkey is circled; note the cluster of elevated scores around it, which is exactly the structure the wrong-key response predicts.](../results/figures/fig2_score_landscape.png)
+
+*Figure 2. One attack's complete CRD score surface over all 4096 candidate subkeys. The correct subkey is circled; note the cluster of elevated scores around it, which is exactly the structure the wrong-key response predicts.*
 
 ## 3. The guided search
 
@@ -108,6 +112,14 @@ The piling-up prediction and the measurement agree to 3-4 decimal places, which
 is the check that the trail search, the mask algebra and the cipher agree with
 each other.
 
+A note on trial counts, since it changed a conclusion here. Everything below
+uses 60-150 trials per point. An earlier draft used 40, where the binomial
+error bar near the steep part of the success curve is about +/-20 pp -- large
+enough that the same configuration measured twice gave 87.5% and 50.0%, and
+large enough that one reported ordering reversed when the count was raised.
+Raising the trial count does not make the method perform worse; it makes the
+measurement honest.
+
 ### 4.2 Reproducing the paper's frameworks
 
 One-bit key recovery (the paper's Eq. 6 + CRD) against Matsui's Algorithm 1 on
@@ -148,13 +160,15 @@ complexity the way the paper's 8-round DES row does:
 
 | N x t | N | t | ML-aided Alg. 2 | Matsui Alg. 2 | mean rank of true key | time / attack |
 |---|---|---|---|---|---|---|
-| 524,288 | 2048 | 256 | 50.0% | 67.5% | 4.7 | 26.55 s |
-| 655,360 | 2560 | 256 | 80.0% | 85.0% | 0.8 | 6.84 s |
-| 786,432 | 3072 | 256 | 92.5% | 90.0% | 0.4 | 7.28 s |
-| 917,504 | 3584 | 256 | 97.5% | 97.5% | 0.0 | 7.52 s |
-| 1,048,576 | 4096 | 256 | 100.0% | 100.0% | 0.0 | 8.47 s |
+| 524,288 | 2048 | 256 | 65.3% | 72.0% | 5.9 | 4.15 s |
+| 655,360 | 2560 | 256 | 88.0% | 90.0% | 0.2 | 5.29 s |
+| 786,432 | 3072 | 256 | 90.7% | 93.3% | 0.4 | 40.68 s |
+| 917,504 | 3584 | 256 | 94.7% | 96.0% | 0.2 | 6.81 s |
+| 1,048,576 | 4096 | 256 | 93.3% | 96.0% | 0.1 | 7.25 s |
 
-> *(figure `fig0_data_complexity.png` not generated yet -- run `experiments/make_plots.py`)*
+![Figure 0. Success rate of Algorithm 2 against data complexity, for the ML-aided CRD score and for Matsui's classical statistic on identical data.](../results/figures/fig0_data_complexity.png)
+
+*Figure 0. Success rate of Algorithm 2 against data complexity, for the ML-aided CRD score and for Matsui's classical statistic on identical data.*
 
 ### 4.3 A second thing reproduction surfaced: accuracy is not enough
 
@@ -195,7 +209,14 @@ All methods score candidates through the **same** trained distinguisher, the
 same CRD rule and the same data; only the visit order and the stopping point
 differ.
 
-> *(not generated yet -- run `experiments/exp2_guided_vs_bruteforce.py`)*
+| method | success rate | vs baseline | agrees with exhaustive | evals (median) | % of \|GK\| | evals (p95) | time / attack | speed-up |
+|---|---|---|---|---|---|---|---|---|
+| `exhaustive` | 72.0% +/- 7.2 | +0.0 pp | 100.0% | 4096 | 100.0% | 4096 | 5.85 s | 1.00x |
+| `sequential-earlystop` | 7.3% +/- 4.2 | -64.7 pp | 8.0% | 204 | 5.0% | 1475 | 0.39 s | 15.02x |
+| `random` | 38.7% +/- 7.8 | -33.3 pp | 54.7% | 2227 | 54.4% | 2227 | 2.18 s | 2.68x |
+| `guided-skopt` | 10.0% +/- 18.6 | -70.0 pp | 10.0% | 99 | 2.4% | 100 | 51.76 s | 0.11x |
+| `guided-wkr-budget` | 72.7% +/- 7.1 | +0.7 pp | 98.7% | 2227 | 54.4% | 2227 | 3.11 s | 1.88x |
+| `guided-wkr` | 72.7% +/- 7.1 | +0.7 pp | 97.3% | 2634 | 64.3% | 4096 | 3.64 s | 1.61x |
 
 Two controls separate the possible sources of the saving:
 
@@ -226,40 +247,100 @@ and that is the one the argument rests on.
 Success rate as a function of a fixed query budget, replayed from full-length
 search trajectories:
 
-> *(not generated yet -- run `experiments/exp3_budget_sensitivity.py`)*
+| budget (% of \|GK\|) | queries | guided-wkr success | sequential success | random success | guided-wkr agreement |
+|---|---|---|---|---|---|
+| 0.5% | 20 | 3.0% | 0.0% | 2.0% | 4.0% |
+| 1.0% | 41 | 16.0% | 1.0% | 2.0% | 19.0% |
+| 2.0% | 82 | 26.0% | 3.0% | 3.0% | 33.0% |
+| 5.0% | 205 | 39.0% | 6.0% | 9.0% | 57.0% |
+| 10.0% | 410 | 50.0% | 13.0% | 13.0% | 72.0% |
+| 15.0% | 614 | 56.0% | 17.0% | 14.0% | 80.0% |
+| 20.0% | 819 | 59.0% | 22.0% | 15.0% | 86.0% |
+| 25.0% | 1024 | 60.0% | 23.0% | 19.0% | 87.0% |
+| 50.0% | 2048 | 67.0% | 42.0% | 41.0% | 98.0% |
+| 100.0% | 4096 | 68.0% | 68.0% | 68.0% | 100.0% |
 
-> *(figure `fig3_budget_sensitivity.png` not generated yet -- run `experiments/make_plots.py`)*
+![Figure 3. Success rate and agreement with the exhaustive scan as a function of the query budget. The dashed line is exhaustive Algorithm 2, which always spends all 4096 evaluations.](../results/figures/fig3_budget_sensitivity.png)
 
-## 7. Early stopping
+*Figure 3. Success rate and agreement with the exhaustive scan as a function of the query budget. The dashed line is exhaustive Algorithm 2, which always spends all 4096 evaluations.*
 
-The stopping threshold is calibrated on a **separate seed range** from the
-trials reported above:
+## 7. Early stopping, and why we do not lead with it
+
+Everything above is the **fixed-budget** mode: spend N evaluations, return the
+best. A natural extra is to let the search decide for itself when it is done.
+We built that (a threshold on how concentrated the posterior has become,
+calibrated on a **separate seed range** from the trials reported above) and it
+works -- but it is not where the result lives, for two measured reasons.
+
+**First, the cost depends very steeply on how much certainty you demand.**
+Quoting one tuned number here would be misleading, so here is the curve:
+
+*Phase 1, TinyDES-24:*
+
+| agreement target | threshold | queries (median) | % of \|GK\| | agreement reached | success |
+|---|---|---|---|---|---|
+| 80% | 0.750 | 678 | 16.6% | 80.0% | 50.0% |
+| 90% | 0.900 | 1453 | 35.5% | 92.0% | 56.0% |
+| 95% | 0.950 | 2227 | 54.4% | 96.0% | 58.0% |
+| 99% | 0.990 | 3868 | 94.4% | 100.0% | 60.0% |
+
+*Phase 2, real 8-round DES:*
+
+| agreement target | threshold | queries (median) | % of \|GK\| | agreement reached | success |
+|---|---|---|---|---|---|
+| 80% | 0.700 | 259 | 6.3% | 80.0% | 72.0% |
+| 90% | 0.900 | 418 | 10.2% | 92.0% | 80.0% |
+| 95% | 0.975 | 1660 | 40.5% | 100.0% | 76.0% |
+| 99% | 0.975 | 1660 | 40.5% | 100.0% | 76.0% |
+
+On DES, going from 92% agreement to 100% costs 10% of the candidate space
+versus 40% -- a four-fold difference for the last eight percentage points. Any
+single headline figure hides that.
+
+**Second, at matched agreement the stopping rule is *worse* than simply
+choosing a budget.** On Phase 1 it reaches 96% agreement at a median of 54.4%
+of the space, where a fixed budget reaches 96% at 40%. The reason is
+instructive: exhaustive Algorithm 2 itself only succeeds about 60% of the time
+at this data complexity, so roughly 40% of trials contain no findable key at
+all. A fixed budget gives up on those. The stopping rule cannot distinguish
+"this one is hopeless" from "not found yet", so it keeps querying exactly where
+there is nothing to find, and those trials dominate its median.
+
+So the honest recommendation is: **use the budget mode, pick the budget from
+the curve in Section 6.** Early stopping is available, calibrated and reported,
+but it is an optional extra rather than the headline.
+
+The full threshold sweep, for completeness:
 
 | posterior threshold | queries (median) | % of \|GK\| | queries (p95) | agreement with exhaustive | success |
 |---|---|---|---|---|---|
-| 0.300 | 66 | 1.6% | 488 | 40.0% | 33.3% |
-| 0.400 | 117 | 2.9% | 542 | 46.7% | 36.7% |
-| 0.500 | 168 | 4.1% | 879 | 56.7% | 40.0% |
-| 0.600 | 203 | 5.0% | 1398 | 60.0% | 43.3% |
-| 0.700 | 284 | 6.9% | 2462 | 66.7% | 50.0% |
-| 0.750 | 446 | 10.9% | 2670 | 73.3% | 53.3% |
-| 0.800 | 506 | 12.4% | 3314 | 76.7% | 53.3% |
-| 0.850 | 1040 | 25.4% | 3618 | 83.3% | 56.7% |
-| 0.900 | 1216 | 29.7% | 4096 | 93.3% | 63.3% |
-| 0.950 | 1546 | 37.7% | 4096 | 96.7% | 66.7% |
-| 0.975 | 2036 | 49.7% | 4096 | 100.0% | 66.7% |
-| 0.990 | 2982 | 72.8% | 4096 | 100.0% | 66.7% |
-| 0.995 | 3259 | 79.6% | 4096 | 100.0% | 66.7% |
-| 0.999 | 3988 | 97.4% | 4096 | 100.0% | 66.7% |
-| 1.000 | 4096 | 100.0% | 4096 | 100.0% | 66.7% |
+| 0.300 | 69 | 1.7% | 488 | 38.0% | 28.0% |
+| 0.400 | 116 | 2.8% | 571 | 46.0% | 32.0% |
+| 0.500 | 153 | 3.7% | 988 | 56.0% | 36.0% |
+| 0.600 | 222 | 5.4% | 1727 | 62.0% | 40.0% |
+| 0.700 | 457 | 11.2% | 2959 | 72.0% | 46.0% |
+| 0.750 | 678 | 16.6% | 3425 | 80.0% | 50.0% |
+| 0.800 | 870 | 21.2% | 3599 | 82.0% | 50.0% |
+| 0.850 | 1116 | 27.2% | 4096 | 86.0% | 52.0% |
+| 0.900 | 1453 | 35.5% | 4096 | 92.0% | 56.0% |
+| 0.950 | 2227 | 54.4% | 4096 | 96.0% | 58.0% |
+| 0.975 | 2710 | 66.2% | 4096 | 98.0% | 58.0% |
+| 0.990 | 3868 | 94.4% | 4096 | 100.0% | 60.0% |
+| 0.995 | 4060 | 99.1% | 4096 | 100.0% | 60.0% |
+| 0.999 | 4096 | 100.0% | 4096 | 100.0% | 60.0% |
+| 1.000 | 4096 | 100.0% | 4096 | 100.0% | 60.0% |
 
-> *(figure `fig4_stopping_tradeoff.png` not generated yet -- run `experiments/make_plots.py`)*
+![Figure 4. The early-stopping trade-off. Labels give the posterior threshold.](../results/figures/fig4_stopping_tradeoff.png)
+
+*Figure 4. The early-stopping trade-off. Labels give the posterior threshold.*
 
 The rule behaves the way one would want: it exits quickly on trials where the
 key signal is strong, and falls back towards the full scan when it is not, so
 the distribution of evaluations used is bimodal rather than merely shifted.
 
-> *(figure `fig5_query_distribution.png` not generated yet -- run `experiments/make_plots.py`)*
+![Figure 5. Distinguisher evaluations actually spent per attack by the guided search, split by whether the attack succeeded. Exhaustive Algorithm 2 spends all 4096 every time.](../results/figures/fig5_query_distribution.png)
+
+*Figure 5. Distinguisher evaluations actually spent per attack by the guided search, split by whether the attack succeeded. Exhaustive Algorithm 2 spends all 4096 every time.*
 
 ## 8. Phase 2: the same search on real DES
 
@@ -282,11 +363,18 @@ guessed bits -- the front mask activates S-box 5, whose round-0 subkey bits are
 exactly `K0[18..23]`, and the back mask activates S-box 1, whose round-7 bits
 are exactly `K7[42..47]`. That is the paper's Fig. 5, and |GK| = 4096.
 
+Configuration: **8-round DES**, 6-round approximation (measured p = 0.495753), t = 80, N x t = 400,000, |GK| = 4096, 60 trials. ND accuracy 51.30% (fixed-p Bayes reference 51.52%). Stopping threshold 0.975, calibrated on its own independent seed range. For comparison, the paper reports 80.2% success at N x t = 4 x 10^5 for this attack.
 
+| method | success rate | vs baseline | agrees with exhaustive | evals (median) | % of \|GK\| | time / attack | speed-up |
+|---|---|---|---|---|---|---|---|
+| `exhaustive` | 58.3% | +0.0 pp | 100.0% | 4096 | 100.0% | 3.62 s | 1.00x |
+| `sequential-earlystop` | 8.3% | -50.0 pp | 11.7% | 304 | 7.4% | 0.44 s | 8.20x |
+| `random` | 10.0% | -48.3 pp | 25.0% | 1024 | 25.0% | 0.92 s | 3.94x |
+| `guided-wkr` | 56.7% | -1.7 pp | 95.0% | 2911 | 71.1% | 3.35 s | 1.08x |
 
-> *(not generated yet -- run `experiments/exp4_phase2_des_reduced_round.py --config l6`)*
+![Figure 6. Phase 2 on real 8-round DES with Matsui's L6, in the paper's own attack geometry.](../results/figures/fig6_phase2_des.png)
 
-> *(figure `fig6_phase2_des.png` not generated yet -- run `experiments/make_plots.py`)*
+*Figure 6. Phase 2 on real 8-round DES with Matsui's L6, in the paper's own attack geometry.*
 
 A side note that fell out of this: Matsui's `L5` cannot be used for a two-sided
 attack of this shape at all. Its input mask spans five S-boxes, so the front

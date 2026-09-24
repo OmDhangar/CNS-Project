@@ -6,11 +6,59 @@ AttackSetup: 8-round TinyDES-24, 6-round approximation on rounds 1..6
   approximation p = 0.503396  (bias 2^-8.20)
   distinguisher ND_6^256: validation accuracy 52.192% (fixed-p Bayes reference 52.169%)
   data per attack N*t = 524,288  (N = 2048, t = 256)
-  guided search stopping rule: posterior >= 0.95 (calibrated on 30 independent trials)
-  matched budget for the budgeted controls: 1546 (37.7% of |GK|)
+  guided search stopping rule: posterior >= 0.95 (calibrated on 50 independent trials)
+  matched budget for the budgeted controls: 2227 (54.4% of |GK|)
   scikit-optimize: budget 100, 10 trials (its GP refit dominates its runtime)
 
 WrongKeyProfile: |rho_f| >= 0.5 for 7/64 differences, |rho_b| >= 0.5 for 2/64;
   one query informs 14 of 4096 hypotheses at the 0.3 level (0.3%)
   rho independent of the key: front=True, back=True
 
+  trial 5/150  (719s elapsed, 143.8s/trial)
+  trial 10/150  (990s elapsed, 99.0s/trial)
+  trial 15/150  (1058s elapsed, 70.5s/trial)
+  trial 20/150  (1146s elapsed, 57.3s/trial)
+  trial 25/150  (1223s elapsed, 48.9s/trial)
+  trial 30/150  (1299s elapsed, 43.3s/trial)
+  trial 35/150  (1377s elapsed, 39.3s/trial)
+  trial 40/150  (1445s elapsed, 36.1s/trial)
+  trial 45/150  (1506s elapsed, 33.5s/trial)
+  trial 50/150  (1577s elapsed, 31.5s/trial)
+  trial 55/150  (1630s elapsed, 29.6s/trial)
+  trial 60/150  (1693s elapsed, 28.2s/trial)
+  trial 65/150  (1758s elapsed, 27.0s/trial)
+  trial 70/150  (1819s elapsed, 26.0s/trial)
+  trial 75/150  (1889s elapsed, 25.2s/trial)
+  trial 80/150  (1958s elapsed, 24.5s/trial)
+  trial 85/150  (2028s elapsed, 23.9s/trial)
+  trial 90/150  (2090s elapsed, 23.2s/trial)
+  trial 95/150  (2154s elapsed, 22.7s/trial)
+  trial 100/150  (2215s elapsed, 22.2s/trial)
+  trial 105/150  (2281s elapsed, 21.7s/trial)
+  trial 110/150  (2352s elapsed, 21.4s/trial)
+  trial 115/150  (2420s elapsed, 21.0s/trial)
+  trial 120/150  (2481s elapsed, 20.7s/trial)
+  trial 125/150  (2536s elapsed, 20.3s/trial)
+  trial 130/150  (2611s elapsed, 20.1s/trial)
+  trial 135/150  (2673s elapsed, 19.8s/trial)
+  trial 140/150  (2740s elapsed, 19.6s/trial)
+  trial 145/150  (2807s elapsed, 19.4s/trial)
+  trial 150/150  (2866s elapsed, 19.1s/trial)
+
+method                   trials   success  evals(med)  % of |GK|  evals(p95)  time/attack
+-----------------------------------------------------------------------------------------
+exhaustive                  150     72.0%        4096     100.0%        4096        5.85s
+sequential-earlystop        150      7.3%         204       5.0%        1475        0.39s
+random                      150     38.7%        2227      54.4%        2227        2.18s
+guided-skopt                 10     10.0%          99       2.4%         100       51.76s
+guided-wkr-budget           150     72.7%        2227      54.4%        2227        3.11s
+guided-wkr                  150     72.7%        2634      64.3%        4096        3.64s
+
+  exhaustive               agrees with exhaustive argmax 100.0% | success delta  +0.0 pp | wall-clock speedup 1.00x
+  sequential-earlystop     agrees with exhaustive argmax   8.0% | success delta -64.7 pp | wall-clock speedup 15.02x
+  random                   agrees with exhaustive argmax  54.7% | success delta -33.3 pp | wall-clock speedup 2.68x
+  guided-skopt             agrees with exhaustive argmax  10.0% | success delta -70.0 pp | wall-clock speedup 0.11x
+  guided-wkr-budget        agrees with exhaustive argmax  98.7% | success delta  +0.7 pp | wall-clock speedup 1.88x
+  guided-wkr               agrees with exhaustive argmax  97.3% | success delta  +0.7 pp | wall-clock speedup 1.61x
+
+wrote results to D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results

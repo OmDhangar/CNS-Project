@@ -1,0 +1,16 @@
+{
+  "config": "l6",
+  "rounds": 6,
+  "cipher_rounds": 8,
+  "t": 80,
+  "nt": 400000,
+  "trials": 60,
+  "space": 4096,
+  "p_measured": 0.49575257301330566,
+  "val_acc": 0.5129749774932861,
+  "bayes_acc": 0.5151585073770028,
+  "j_front": 4,
+  "j_back": 0,
+  "stop_posterior": 0.975,
+  "exhaustive_success": 0.5833333333333334
+}

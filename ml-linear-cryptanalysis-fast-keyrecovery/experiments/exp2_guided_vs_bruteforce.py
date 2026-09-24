@@ -11,6 +11,11 @@ sequential-earlystop    index-order scan + our stopping rule (isolates the
                         contribution of stopping early, on its own).
 random                  uniform sampling at a matched budget (isolates the
                         contribution of the model, on its own).
+guided-wkr-budget       ours, run to a fixed budget with no stopping rule at
+                        all.  This is the robust operating mode: it makes no
+                        claim about knowing when it is done, so its cost is
+                        exactly the budget and carries none of the variance
+                        that tuning a stopping threshold does.
 guided-skopt            scikit-optimize GP search over the 12 guessed bits.
 guided-wkr              ours: wrong-key-response-guided Bayesian search.
 
@@ -99,7 +104,8 @@ def main():
     rng = np.random.default_rng(args.seed)
     per_trial = []
     buckets = {k: [] for k in
-               ["exhaustive", "sequential-earlystop", "random", "guided-skopt", "guided-wkr"]}
+               ["exhaustive", "sequential-earlystop", "random", "guided-skopt",
+                "guided-wkr-budget", "guided-wkr"]}
     trajectories = []
 
     t_start = time.time()
@@ -110,9 +116,12 @@ def main():
         r_ex = run_exhaustive(scorer, setup, data)
         r_sq = SequentialSearch(setup, budget=space).run(scorer, data)
         r_rd = RandomSearch(setup, budget=budget, seed=trial).run(scorer, data)
+        r_wb = WKRSearch(setup, profile=profile, budget=budget, stop_z=None,
+                         stop_posterior=None, seed=trial).run(scorer, data)
+        r_wb.method = "guided-wkr-budget"
         r_wk = WKRSearch(setup, profile=profile, budget=space,
                          stop_posterior=stop_posterior, seed=trial).run(scorer, data)
-        runs = [r_ex, r_sq, r_rd, r_wk]
+        runs = [r_ex, r_sq, r_rd, r_wb, r_wk]
         if not args.skip_skopt and trial < args.skopt_trials:
             runs.append(SkoptSearch(setup, budget=min(args.skopt_budget, budget),
                                     seed=trial).run(scorer, data))

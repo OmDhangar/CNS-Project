@@ -1,0 +1,114 @@
+==============================================================================
+Phase 2: real DES, 8-round attack with Matsui's L6
+==============================================================================
+L6: 6-round linear approximation of DES
+  a_in  (mask on L_in)  = 0x000
+  b_in  (mask on R_in)  = 0x1040080   active S-box(es) [4]
+  a_out (mask on L_out) = 0x8000   active S-box(es) [0]
+  b_out (mask on R_out) = 0x21040080
+  key masks per round   = ['0x00000', '0x400000', '0x100000000000', '0x400000', '0x00000', '0x400000']
+  MEASURED p            = 0.495753   (bias = 0.00424743 = 2^-7.88, 4,194,304 samples)
+
+AttackSetup: 8-round DES, 6-round approximation on rounds 1..6
+  front guess: K_0 bits feeding S-box 4 (6 bits, output mask 0xe)
+  back  guess: K_7 bits feeding S-box 0 (6 bits, output mask 0x4)
+  |GK| = 4096
+  approximation p = 0.495753  (bias 2^-7.88)
+  -> front guess = K_0 bits [18, 19, 20, 21, 22, 23], back guess = K_7 bits [42, 43, 44, 45, 46, 47]
+
+  epoch   1/30  loss 0.72936  val-acc 50.418%
+  epoch   2/30  loss 0.70173  val-acc 50.060%
+  epoch   3/30  loss 0.69723  val-acc 50.220%
+  epoch   4/30  loss 0.69546  val-acc 50.500%
+  epoch   5/30  loss 0.69465  val-acc 50.390%
+  epoch   6/30  loss 0.69425  val-acc 50.168%
+  epoch   7/30  loss 0.69390  val-acc 50.208%
+  epoch   8/30  loss 0.69377  val-acc 50.412%
+  epoch   9/30  loss 0.69351  val-acc 50.440%
+  epoch  10/30  loss 0.69344  val-acc 50.558%
+  epoch  11/30  loss 0.69321  val-acc 50.393%
+  epoch  12/30  loss 0.69304  val-acc 51.038%
+  epoch  13/30  loss 0.69317  val-acc 50.915%
+  epoch  14/30  loss 0.69298  val-acc 51.098%
+  epoch  15/30  loss 0.69306  val-acc 51.227%
+  epoch  16/30  loss 0.69298  val-acc 50.802%  ema-acc 50.953%
+  epoch  17/30  loss 0.69293  val-acc 51.060%  ema-acc 51.202%
+  epoch  18/30  loss 0.69289  val-acc 51.170%  ema-acc 51.028%
+  epoch  19/30  loss 0.69280  val-acc 50.965%  ema-acc 50.738%
+  epoch  20/30  loss 0.69286  val-acc 51.005%  ema-acc 50.930%
+  epoch  21/30  loss 0.69285  val-acc 51.057%  ema-acc 51.060%
+  epoch  22/30  loss 0.69272  val-acc 51.208%  ema-acc 50.982%
+  epoch  23/30  loss 0.69266  val-acc 51.127%  ema-acc 51.080%
+  epoch  24/30  loss 0.69274  val-acc 51.260%  ema-acc 51.040%
+  epoch  25/30  loss 0.69261  val-acc 51.297%  ema-acc 51.078%
+  epoch  26/30  loss 0.69272  val-acc 51.162%  ema-acc 51.140%
+  epoch  27/30  loss 0.69277  val-acc 51.187%  ema-acc 51.125%
+  epoch  28/30  loss 0.69269  val-acc 51.220%  ema-acc 51.208%
+  epoch  29/30  loss 0.69277  val-acc 51.170%  ema-acc 51.197%
+  epoch  30/30  loss 0.69265  val-acc 51.190%  ema-acc 51.173%
+  val-acc 51.297%   fixed-p Bayes reference 51.516%   advantage 1.297 of 1.516 pp (85.6%)
+
+WrongKeyProfile: |rho_f| >= 0.5 for 6/64 differences, |rho_b| >= 0.5 for 1/64;
+  one query informs 21 of 4096 hypotheses at the 0.3 level (0.5%)
+  rho independent of the key: front=True, back=True
+
+  N*t = 400,000 (N = 5000, t = 80), trials = 60
+
+  calibrating the stopping rule on 25 independent trials (seed range 924242)
+    calibration trial 5/25
+    calibration trial 10/25
+    calibration trial 15/25
+    calibration trial 20/25
+    calibration trial 25/25
+  stop_posterior  queries(med)  % of |GK|  queries(p95)  agreement   success
+----------------------------------------------------------------------------
+          0.3000            93       2.3%           386      28.0%     20.0%
+          0.4000           118       2.9%           615      40.0%     36.0%
+          0.5000           187       4.6%           797      48.0%     44.0%
+          0.6000           257       6.3%          1624      72.0%     64.0%
+          0.7000           259       6.3%          1830      80.0%     72.0%
+          0.7500           259       6.3%          2107      80.0%     72.0%
+          0.8000           305       7.4%          2656      84.0%     76.0%
+          0.8500           414      10.1%          2871      88.0%     76.0%
+          0.9000           418      10.2%          3121      92.0%     80.0%
+          0.9500           592      14.5%          4030      92.0%     80.0%
+          0.9750          1660      40.5%          4096     100.0%     76.0%
+          0.9900          2455      59.9%          4096     100.0%     76.0%
+          0.9950          3362      82.1%          4096     100.0%     76.0%
+          0.9990          3994      97.5%          4096     100.0%     76.0%
+          0.9999          4096     100.0%          4096     100.0%     76.0%
+
+chosen stop_posterior = 0.9750
+  success   76.0%  (exhaustive 76.0%, tolerance 1 pp)
+  agreement 100.0%
+  queries   median 1660 (40.5% of |GK|), p95 4096
+
+  guided stopping rule: posterior >= 0.975
+  matched budget for the controls: 1024 (25% of |GK|)
+
+  trial 5/60
+  trial 10/60
+  trial 15/60
+  trial 20/60
+  trial 25/60
+  trial 30/60
+  trial 35/60
+  trial 40/60
+  trial 45/60
+  trial 50/60
+  trial 55/60
+  trial 60/60
+
+method                   trials   success  evals(med)  % of |GK|  evals(p95)  time/attack
+-----------------------------------------------------------------------------------------
+exhaustive                   60     58.3%        4096     100.0%        4096        3.62s
+sequential-earlystop         60      8.3%         304       7.4%        1465        0.44s
+random                       60     10.0%        1024      25.0%        1024        0.92s
+guided-wkr                   60     56.7%        2911      71.1%        4096        3.35s
+
+  exhaustive               agrees 100.0% | success delta  +0.0 pp | speedup 1.00x
+  sequential-earlystop     agrees  11.7% | success delta -50.0 pp | speedup 8.20x
+  random                   agrees  25.0% | success delta -48.3 pp | speedup 3.94x
+  guided-wkr               agrees  95.0% | success delta  -1.7 pp | speedup 1.08x
+
+wrote results to D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results

@@ -107,17 +107,30 @@ class CandidateScorer:
         self.n_calls = 0        # total calls, including repeats
 
         # Fast path: pre-materialise the two guessed F-terms and pre-allocate
-        # the network's input buffer.  Verified against the readable
-        # transform_bits definition by setup.self_test.
-        setup.self_test(data)
+        # every buffer the inner loop needs.  The streams are computed once and
+        # handed to self_test, which verifies them against the readable
+        # transform_bits definition -- earlier this recomputed all 128 streams a
+        # second time purely to check them.
         n_used = self.n_samples * self.t
         front, back = setup.precompute_streams(data)
+        setup.self_test(data, streams=(front, back))
         self._front = np.ascontiguousarray(front[:, :n_used])
         self._back = np.ascontiguousarray(back[:, :n_used])
-        self._buf = np.empty((2 * self.n_samples, self.t), dtype=np.uint8)
-        self._lo = self._buf[: self.n_samples].reshape(-1)
-        self._hi = self._buf[self.n_samples:].reshape(-1)
+
+        # Only the gamma.K' = 0 half is built in uint8; its complement is
+        # produced directly in the float buffer as 1 - x, which saves a full
+        # uint8 pass and halves the uint8 -> float32 conversion.
+        self._buf = np.empty((self.n_samples, self.t), dtype=np.uint8)
+        self._lo = self._buf.reshape(-1)
         self._tensor_u8 = torch.from_numpy(self._buf)
+        # The network needs float32.  ``uint8_tensor.float()`` allocates a fresh
+        # 4x-larger tensor on every one of the 4096 calls; copying into a
+        # pre-allocated float buffer instead does the same conversion with no
+        # allocation and no garbage.
+        self._tensor_f32 = torch.empty((2 * self.n_samples, self.t),
+                                       dtype=torch.float32)
+        self._f32_lo = self._tensor_f32[: self.n_samples]
+        self._f32_hi = self._tensor_f32[self.n_samples:]
 
     # -- bookkeeping -------------------------------------------------------
     def reset(self):
@@ -134,9 +147,10 @@ class CandidateScorer:
         # the upper half its complement, i.e. the guess gamma.K' = 1.
         kf, kb = self.setup.split(candidate)
         np.bitwise_xor(self._front[kf], self._back[kb], out=self._lo)
-        np.subtract(np.uint8(1), self._lo, out=self._hi)
-        with torch.no_grad():
-            logits = self.model.forward(self._tensor_u8.float()).numpy()
+        self._f32_lo.copy_(self._tensor_u8)
+        torch.sub(1.0, self._f32_lo, out=self._f32_hi)
+        with torch.inference_mode():
+            logits = self.model.forward(self._tensor_f32).numpy()
         s0 = crd_from_logits(logits[: self.n_samples])
         s1 = crd_from_logits(logits[self.n_samples:])
         if s0 >= s1:

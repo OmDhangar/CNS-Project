@@ -1,0 +1,57 @@
+AttackSetup: 8-round TinyDES-24, 6-round approximation on rounds 1..6
+  front guess: K_0 bits feeding S-box 2 (6 bits, output mask 0x1)
+  back  guess: K_7 bits feeding S-box 1 (6 bits, output mask 0x5)
+  |GK| = 4096
+  approximation p = 0.503396  (bias 2^-8.20)
+  N*t = 524,288, t = 256, trials = 100
+
+  trial 5/100
+  trial 10/100
+  trial 15/100
+  trial 20/100
+  trial 25/100
+  trial 30/100
+  trial 35/100
+  trial 40/100
+  trial 45/100
+  trial 50/100
+  trial 55/100
+  trial 60/100
+  trial 65/100
+  trial 70/100
+  trial 75/100
+  trial 80/100
+  trial 85/100
+  trial 90/100
+  trial 95/100
+  trial 100/100
+
+exhaustive Algorithm 2 success on this set: 68.0% (68/100)
+
+  budget   % |GK|          guided-wkr              random          sequential
+-----------------------------------------------------------------------------
+      20     0.5%                3.0%                2.0%                0.0%
+      41     1.0%               16.0%                2.0%                1.0%
+      61     1.5%               19.0%                3.0%                1.0%
+      82     2.0%               26.0%                3.0%                3.0%
+     123     3.0%               33.0%                5.0%                4.0%
+     164     4.0%               36.0%                6.0%                5.0%
+     205     5.0%               39.0%                9.0%                6.0%
+     307     7.5%               46.0%               12.0%               12.0%
+     410    10.0%               50.0%               13.0%               13.0%
+     512    12.5%               54.0%               13.0%               17.0%
+     614    15.0%               56.0%               14.0%               17.0%
+     819    20.0%               59.0%               15.0%               22.0%
+    1024    25.0%               60.0%               19.0%               23.0%
+    1229    30.0%               63.0%               23.0%               28.0%
+    1638    40.0%               66.0%               33.0%               33.0%
+    2048    50.0%               67.0%               41.0%               42.0%
+    3072    75.0%               68.0%               54.0%               53.0%
+    4096   100.0%               68.0%               68.0%               68.0%
+       exhaustive               68.0%
+
+guided-wkr reaches exhaustive success (within 1 pp) at 2048 queries = 50.0% of |GK|
+  random       needs 4096 queries = 100.0% of |GK|
+  sequential   needs 4096 queries = 100.0% of |GK|
+
+wrote results to D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results

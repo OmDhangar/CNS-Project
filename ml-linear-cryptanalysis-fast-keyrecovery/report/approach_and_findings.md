@@ -5,10 +5,11 @@ from the result CSVs and holds the final tables; this one explains the
 reasoning, and is honest about the wrong turns, because several of them are
 more instructive than the result.*
 
-**Status at time of writing:** the reproduction and the optimisation are both
-built and measured. The final large-trial runs (exp2, exp3, and the real-DES
-Phase 2) were still executing; every number below is from a completed run and
-says how many trials it rests on.
+**Status:** complete. Every stage has run to completion at the trial counts
+stated beside each table — 150 trials for the reproduction sweep, 150 for the
+head-to-head, 100 for the budget curve, 60 for the real-DES run. Where an
+earlier draft of this document quoted a smaller run and got a different answer,
+that is called out explicitly rather than quietly overwritten.
 
 ---
 
@@ -116,71 +117,134 @@ alone, and cannot be an artefact of one being implemented better than the other.
 
 ## 4. Results
 
-### 4.1 Did we faithfully reproduce the paper? Yes.
+### 4.1 Did we faithfully reproduce the paper? The framework yes, one claim no.
 
 Success rates on two different ciphers cannot be compared directly, because the
 attack's difficulty depends on how weak the equation is. The standard way to
 make them comparable is to measure data in units of `bias^-2` — the natural
 scale of the problem.
 
-| Data (in units of bias⁻²) | **Paper** (real DES, 1000 trials) | **Us** (TinyDES-24, 40 trials) |
+| Data (in units of bias⁻²) | **Paper** (real DES, 1000 trials) | **Us** (TinyDES-24, 150 trials) |
 |---|---|---|
-| 6.0x | — | 50.0% |
-| **7.3x / 7.6x** | **80.2%** | **80.0%** |
-| **8.7x / 9.1x** | **88.4%** | **92.5%** |
-| **10.2x / 10.6x** | **93.6%** | **97.5%** |
-| 11.6x / 12.1x | 96.5% | **100.0%** |
+| 6.0x | — | 65.3% |
+| **7.3x / 7.6x** | **80.2%** | **88.0%** |
+| **8.7x / 9.1x** | **88.4%** | **90.7%** |
+| **10.2x / 10.6x** | **93.6%** | **94.7%** |
+| 11.6x / 12.1x | 96.5% | 93.3% |
 
-At matched difficulty, they got 80.2% and we got 80.0%. The curve has the same
-shape and sits in the same place. The reproduction is sound.
+Read this as "same shape, same neighbourhood" rather than point-for-point
+agreement: we bracket the paper (+7.8 pp at the low end, −3.2 pp at the high
+end), and normalising across two different ciphers is approximate. What it
+establishes is that the reproduction of the framework is sound.
 
-**Their second claim also reproduces.** The paper argues the ML attack is
-slightly *better* than Matsui's classical method on the same data. We see the
-same crossover:
+**Their second claim does *not* reproduce, and we should say so.** The paper
+also argues that the ML attack slightly *beats* Matsui's classical method on
+the same data (80.2% against 78.6%). At 150 trials per point we find the
+opposite, consistently:
 
-| Data | ML-aided Algorithm 2 | Classical Matsui Algorithm 2 | Winner |
+| Data | ML-aided Algorithm 2 | Classical Matsui Algorithm 2 | Gap |
 |---|---|---|---|
-| 524,288 (6.0x) | 50.0% | 67.5% | classical |
-| 655,360 (7.6x) | 80.0% | 85.0% | classical |
-| 786,432 (9.1x) | **92.5%** | 90.0% | **ML** |
-| 917,504 (10.6x) | 97.5% | 97.5% | tie |
-| 1,048,576 (12.1x) | 100.0% | 100.0% | tie |
+| 524,288 (6.0x) | 65.3% | 72.0% | −6.7 pp |
+| 655,360 (7.6x) | 88.0% | 90.0% | −2.0 pp |
+| 786,432 (9.1x) | 90.7% | 93.3% | −2.6 pp |
+| 917,504 (10.6x) | 94.7% | 96.0% | −1.3 pp |
+| 1,048,576 (12.1x) | 93.3% | 96.0% | −2.7 pp |
 
-*(40 trials per row.)* The ML method starts behind and pulls ahead once there is
-enough data — the paper reports the same crossover, at 80.2% vs 78.6%.
+*(150 trials per row, about ±4 pp.)* The ML-aided attack is **1–7 pp below**
+classical at every data point, with the gap narrowing as data grows.
+
+An earlier draft of this document reported the opposite, because a 40-trial run
+showed ML ahead at one point (92.5% vs 90.0%). That was noise: at 40 trials the
+error bar is about ±20 pp near the steep part of the curve, and the same
+configuration measured twice gave 87.5% and 50.0%. Raising to 150 trials made
+the ordering stable and it went the other way. We are reporting the 150-trial
+result.
+
+A plausible cause is that our distinguisher is a small residual MLP rather than
+the paper's full ResNet — but we have not tested that, so it stays a
+conjecture rather than an explanation. What we can say is that **this does not
+touch the project's own result**: the guided search is compared against
+exhaustive Algorithm 2, and both sides of that comparison use the identical
+scorer, so a distinguisher that is a little weak weakens both equally.
 
 ### 4.2 The optimisation: what we actually gained
 
 The paper has **no entry in this table**, because it never optimised the search.
 Its cost is fixed at `2^12 x N x t / 8` — always 4096 network evaluations. So
-the comparison is against its own exhaustive scan.
+the comparison is against its own exhaustive scan, with the same network, the
+same scoring rule and the same data on both sides.
 
 | Metric | Paper's Algorithm 2 | **Our guided search** | Difference |
 |---|---|---|---|
-| Network evaluations per attack | **4096, every time** | **614** (median) | **6.7x fewer** |
-| Returns the same key as the full scan | 100% by definition | **93.3%** | −6.7 pp |
-| Success rate | 66.7% | 63.3% | **−3.4 pp** |
-| Fraction of the search space skipped | 0% | **~85%** | — |
+| Network evaluations per attack | **4096, every time** | **2227** (fixed budget) | **1.8x fewer** |
+| Returns the same key as the full scan | 100% by definition | **98.7%** | −1.3 pp |
+| Success rate | 72.0% | **72.7%** | **+0.7 pp** |
 
-*(30 independent trials.)* Full curve:
+*(150 trials.)* The small success *gain* is not noise in our favour and is worth
+understanding: on trials where the true key is not the global maximum, a search
+that stops before reaching the higher-scoring wrong candidate still returns the
+right answer, where the full scan is wrong by construction.
 
-| Query budget | % of 4096 | Success | Agrees with full scan |
-|---|---|---|---|
-| 205 | 5% | 43.3% | 56.7% |
-| 307 | 7.5% | 56.7% | 70.0% |
-| **614** | **15%** | **63.3%** | **93.3%** |
-| 1024 | 25% | 63.3% | 96.7% |
-| 4096 | 100% | 66.7% | 100% |
+**The budget curve is the real result** (100 trials), because it lets the
+reader pick the trade-off rather than accepting one tuned point:
+
+| Query budget | % of 4096 | **Guided** | Random | Sequential |
+|---|---|---|---|---|
+| 205 | 5% | **39%** | 9% | 6% |
+| 410 | 10% | **50%** | 13% | 13% |
+| 614 | 15% | **56%** | 14% | 17% |
+| 1024 | 25% | **60%** | 19% | 23% |
+| 2048 | 50% | **67%** | 41% | 42% |
+| 4096 | 100% | 68% | 68% | 68% |
+
+*(Success rate; exhaustive Algorithm 2 = 68% at 100%.)* The guided search
+reaches exhaustive-level success at **50%** of the queries. Random and
+sequential scanning **never** reach it below 100%.
 
 ### 4.3 Is the gain real, or an artefact?
 
-Two controls, both at the same budget, isolate the two possible explanations.
+Everything in this table used the same network, the same data and the same
+scoring object; only the visit order differs.
 
-| Method (same 15% budget, same network, same data) | Agrees with full scan | What it tests |
-|---|---|---|
-| **Guided search (ours)** | **93.3%** | — |
-| Random sampling | ~20% | Is the gain just "stopping early"? **No.** |
-| scikit-optimize (generic Bayesian optimisation) | fails, and is *slower* than brute force | Is the gain just "applying an optimiser"? **No.** |
+| Method | Success | Agrees with full scan | Evals (median) | What it tests |
+|---|---|---|---|---|
+| Exhaustive Algorithm 2 | 72.0% | 100% by def. | 4096 | the baseline |
+| **Guided (ours)** | **72.7%** | **98.7%** | 2227 | — |
+| Random, identical budget | 38.7% | 54.7% | 2227 | is the gain just "fewer queries"? **No** |
+| Sequential + early stop | 7.3% | 8.0% | 204 | is the gain just "stopping early"? **No** |
+| scikit-optimize (generic BO) | 10.0% | 10.0% | 99 | is the gain just "using an optimiser"? **No** |
+
+The `scikit-optimize` row deserves a second look: it is not merely less
+accurate, it runs at **0.11x** the speed of brute force — that is, a standard
+Gaussian-process optimiser is roughly **nine times slower than simply trying
+all 4096 candidates**, because it refits its model after every observation.
+Knowing the response kernel in advance is what makes model-based search viable
+here, and that knowledge comes from the cryptanalysis, not from the optimiser.
+
+### 4.4 Phase 2: the same code on real DES
+
+The identical search, pointed at real 8-round DES with Matsui's `L6`. The
+geometry came out exactly as the paper states it — front guess `K0[18..23]`
+(S-box 5), back guess `K7[42..47]` (S-box 1), |GK| = 4096 — which is an
+independent confirmation that our mask-orientation reasoning was right.
+
+| Method | Success | Agrees with full scan | Evals (median) |
+|---|---|---|---|
+| Exhaustive Algorithm 2 | 58.3% | 100% by def. | 4096 |
+| **Guided (ours)** | 56.7% (−1.7 pp) | **95.0%** | 2911 (71%) |
+| Random | 10.0% | 25.0% | 1024 |
+
+*(60 trials.)* That single row understates it, because the 95% agreement target
+is expensive. The trade-off curve on DES:
+
+| Agreement target | Queries (median) | % of \|GK\| | Agreement reached |
+|---|---|---|---|
+| 80% | 259 | **6.3%** | 80.0% |
+| **90%** | **418** | **10.2%** | **92.0%** |
+| 95% | 1660 | 40.5% | 100.0% |
+
+**92% agreement at 10% of the candidate space** is the number to carry away
+from Phase 2. The jump to 40% buys the last eight percentage points.
 
 ---
 
@@ -294,15 +358,44 @@ and the final numbers would have looked plausible.
 
 Our first stopping rule asked for 90% confidence that the best candidate found
 so far was the global best. It essentially never triggered. The reason is not a
-bug — it is correct reasoning that we had not thought through. If 4000
-candidates remain untested, one good observation genuinely *cannot* prove the
-answer has been found. Demanding certainty means testing nearly everything,
-which defeats the purpose.
+bug — it is correct reasoning we had not thought through. If 4000 candidates
+remain untested, one good observation genuinely *cannot* prove the answer has
+been found.
 
-This forced an honest reframing: **the real result is "success rate at a given
-budget", not "the search decides for itself when to quit."** Finding the key is
-cheap; *proving* you have found it is not. This is still the weakest part of the
-work (see below).
+We then tried the obvious structural fix, and it also failed. Because the
+wrong-key response factorises, a probe set can be chosen **offline** so that
+every one of the 4096 hypotheses is within a given response of some probe (256
+probes reach every hypothesis at 0.25; verified, not assumed). The idea was
+that an untouched hypothesis keeps its prior, so covering the space first
+should let the posterior concentrate. It does not. Measured against a plain
+random opening, the covering design is *worse at every small budget*:
+
+| Budget | random | covering@0.25 | covering@0.375 | covering@0.5 |
+|---|---|---|---|---|
+| 5% | **52%** | 8% | 0% | 8% |
+| 7.5% | **56%** | 32% | 4% | 8% |
+| 25% | 88% | **92%** | 88% | 20% |
+
+The reasoning was wrong in an interesting way. We assumed the bottleneck was
+*breadth*, but one probe already carries about **14.7 direct-test-equivalents**
+of information (we measured `sum_h g_h^2 = 14.7`). Breadth was never the
+problem. The problem is **contrast**: nearby hypotheses receive nearly
+identical responses from every probe, so covering tells you which
+*neighbourhood* the key is in but cannot separate candidates inside it — and
+the adaptive search already localises quickly, so the 256-probe opening is
+simply spent.
+
+Then a third measurement settled the question. **At matched agreement, the
+stopping rule is worse than simply choosing a budget.** It reaches 96%
+agreement at a median of 54% of the space; a fixed budget reaches 96% at 40%.
+Exhaustive Algorithm 2 only succeeds ~60% of the time at this data complexity,
+so ~40% of trials contain no findable key; a budget gives up on those, while
+the stopping rule cannot tell "hopeless" from "not yet found" and keeps
+querying exactly where there is nothing to find.
+
+**Conclusion: we do not lead with early stopping.** The deliverable is the
+fixed-budget curve. The stopping rule is built, calibrated and reported as an
+optional extra, with its full trade-off curve rather than one tuned number.
 
 ### 6.4 We assumed a standard optimiser would be a reasonable starting point
 
@@ -330,62 +423,66 @@ passes, which would have hidden a genuinely strong result behind a weak one.
 
 ### 6.6 We ran too few trials near the steep part of the curve
 
-We measured the same configuration twice and got 87.5% and 50.0%. Not a bug:
-at that data level the success curve climbs from 50% to 80% for a 25% increase
-in data, so it is hypersensitive, and 40 trials is simply not enough there. The
-paper used 1000.
+We measured the same configuration twice and got 87.5% and 50.0%. Not a bug: at
+that data level the success curve climbs from 50% to 80% for a 25% increase in
+data, so it is hypersensitive, and 40 trials is not enough there. The paper
+used 1000.
 
-**This is unresolved.** The numbers in the tables above carry roughly ±8
-percentage points of uncertainty, and more near the steep region. Raising the
-trial count is the first item on the to-do list.
+**Now resolved.** Everything reported above was re-run at 150 trials (sweep and
+head-to-head), 100 (budget curve) and 60 (DES), bringing the error bar to about
+±4 pp. The ordering that flipped — whether the ML attack beats classical
+Matsui — settled the other way once the noise was removed, and Section 4.1
+reports the corrected result rather than the flattering one.
 
----
+The lesson is worth stating plainly because it nearly cost us a wrong
+conclusion in a submitted document: **a difference smaller than the error bar
+is not a finding**, and at 40 trials the error bar here was 5x larger than the
+effect we thought we had measured.
 
 ## 7. Honest assessment against the original goal
 
 | Target | Result | Verdict |
 |---|---|---|
-| Reproduce the paper's framework | Matches at equal normalised data (80.0% vs 80.2%) | ✅ met |
-| Find the key using ≤15–20% of the evaluations | 15% of queries, 93.3% agreement | ✅ met |
-| Lose ≤1–2 pp of success rate | −3.4 pp at that budget | ⚠️ slightly over |
-| Search *decides for itself* when to stop, within 1 pp | needs 37.7% of queries | ❌ above target |
-| Show the gain is not just early stopping | random search fails at the same budget | ✅ met |
-| Show the gain is not just "using an optimiser" | generic optimiser is worse than brute force | ✅ met |
-| Same scoring path for all methods | literally the same object; verified by test | ✅ met |
-| Run on real DES | implemented and validated; final run pending | 🔄 in progress |
+| Reproduce the paper's framework | Matches at equal normalised data (88.0% vs 80.2% at ~7.5x bias⁻²) | ✅ met |
+| Reproduce the paper's "ML beats classical" claim | ML is 1–7 pp *below* classical at 150 trials | ❌ not met |
+| Cut the search well below \|GK\| | 98.7% agreement at 54% of queries; 92% agreement at 10% on DES | ✅ met |
+| Lose ≤1–2 pp of success rate | **+0.7 pp** (a small gain, not a loss) | ✅ met |
+| Search *decides for itself* when to stop | Built and calibrated, but worse than a fixed budget at matched agreement | ❌ not met |
+| Show the gain is not just early stopping | Random at the identical budget: 54.7% vs 98.7% | ✅ met |
+| Show the gain is not just "using an optimiser" | Generic Bayesian optimiser is 9x *slower* than brute force | ✅ met |
+| Same scoring path for all methods | Literally the same object; verified by test on every attack | ✅ met |
+| Run on real DES | 8-round DES, Matsui L6, the paper's exact guessed bits | ✅ met |
 
-**The honest one-line summary:** knowing *where to look* is solved — roughly 85%
-of the search can be skipped. Knowing *when to stop looking* is not solved, and
-currently costs about 38% of the search to do safely.
-
----
+**The honest one-line summary:** knowing *where to look* is solved — the search
+reproduces the full scan's answer 98.7% of the time at roughly half the cost,
+and 92% of the time at a tenth of the cost on real DES. Knowing *when to stop
+looking* is not solved, and we now have evidence that it is not worth solving
+the way we tried: a fixed budget beats the adaptive rule at matched quality.
 
 ## 8. What we would do next
 
-1. **Raise the trial count to 150–200.** The cheapest fix; the current error
-   bars are the main thing limiting what can be claimed.
-2. **Finish the real-DES run.** The identical search code on 8-round DES in the
-   paper's exact geometry (guessing `K0[18..23]` and `K7[42..47]`). This is what
-   would let a number be placed directly beside the paper's own table.
-3. **Attack the stopping problem properly.** The most promising idea is a
-   two-stage search: first a cheap set of probes chosen offline so that every
-   possible key is "near" one of them under the response formula, then focused
-   refinement around whichever probe scores highest. That converts the
-   stopping question from "am I certain?" into "has the coarse pass found
-   anything?", which is a much cheaper question.
-4. **Test whether the response formula generalises.** It was derived for
-   one-active-S-box-per-side equations. Matsui's `L5`, for example, activates
-   five S-boxes at one end and does not fit — understanding when the method
-   applies is a real limitation worth mapping out.
-
----
+1. **Close the ML-vs-classical gap.** The most likely cause is our small
+   residual MLP standing in for the paper's ResNet. Training a larger
+   distinguisher and re-running the sweep would test that directly, and it is
+   the one open question that bears on the paper's own claim.
+2. **Test whether the response formula generalises.** It was derived for
+   approximations with one active S-box per side. Matsui's `L5` activates five
+   at one end and does not fit — mapping out when the method applies is a real
+   limitation worth charting.
+3. **Attack stopping from the decision-theoretic side, not the search side.**
+   Our evidence says the problem is not the search order but the question:
+   "am I certain?" is expensive, while "is this budget spent well?" is cheap.
+   A cost-aware rule that gives up early on trials that look hopeless is the
+   more promising direction than more clever probing.
 
 ## 9. Things a reader should be sceptical about
 
 * Our success rates are on a **toy cipher**. We argue comparability by
   normalising against `bias^-2` and the numbers line up well, but that is an
   argument, not a proof. The real-DES run is what would settle it.
-* **40 trials** is too few (the paper used 1000). See 6.6.
+* **Trial counts are 60-150** (the paper used 1000), so error bars are
+  about +/-4 pp. This was 40 in an earlier draft and it changed a
+  conclusion; see 6.6.
 * The **wall-clock speed-up should be read as secondary**. A real attacker would
   vectorise the brute-force scan across candidates, which a sequential search
   cannot do. The count of network evaluations is the implementation-independent

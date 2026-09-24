@@ -109,7 +109,8 @@ def sec_headline():
     rows = read_csv("exp2_summary.csv")
     if not rows:
         return missing("experiments/exp2_guided_vs_bruteforce.py"), None
-    order = ["exhaustive", "sequential-earlystop", "random", "guided-skopt", "guided-wkr"]
+    order = ["exhaustive", "sequential-earlystop", "random", "guided-skopt",
+             "guided-wkr-budget", "guided-wkr"]
     rows.sort(key=lambda r: order.index(r["method"]) if r["method"] in order else 99)
     body = []
     for r in rows:
@@ -196,6 +197,28 @@ def sec_phase2():
          "evals (median)", "% of \\|GK\\|", "time / attack", "speed-up"], body), cfg
 
 
+def sec_opening_design():
+    rows = read_csv("exp5_opening_design.csv")
+    if not rows:
+        return missing("experiments/exp5_opening_design.py"), None
+    body = []
+    for r in rows:
+        body.append([
+            f"`{r['design']}`",
+            f"{float(r['stop_posterior']):.3f}",
+            f"{float(r['queries_median']):.0f}",
+            f"{float(r['queries_frac_median']) * 100:.1f}%",
+            f"{float(r['queries_p95']):.0f}",
+            f"{float(r['success']) * 100:.1f}%",
+            f"{float(r['agreement']) * 100:.1f}%",
+        ])
+    tbl = md_table(
+        ["opening design", "chosen threshold", "queries (median)",
+         "% of \|GK\|", "queries (p95)", "success", "agreement"], body)
+    best = min(rows, key=lambda r: float(r["queries_median"]))
+    return tbl, best
+
+
 def fig(name, caption):
     path = os.path.join(RESULTS, "figures", name)
     if not os.path.exists(path):
@@ -229,21 +252,57 @@ def build():
     else:
         phase2_config_line = ""
 
+    # The headline quotes the *fixed-budget* mode, not the auto-stopping one.
+    # The budget mode makes no claim about knowing when it is finished, so its
+    # cost is exactly the budget and it carries none of the variance that
+    # tuning a stopping threshold does -- see Sect. 7.
     wkr = None
     if headline_rows:
-        wkr = next((r for r in headline_rows if r["method"] == "guided-wkr"), None)
+        wkr = next((r for r in headline_rows
+                    if r["method"] == "guided-wkr-budget"), None)
+        if wkr is None:
+            wkr = next((r for r in headline_rows
+                        if r["method"] == "guided-wkr"), None)
 
     if wkr:
-        hl = (f"the guided search returns the same subkey as the exhaustive scan "
-              f"**{float(wkr['agreement_with_exhaustive']) * 100:.0f}%** of the time "
-              f"using a median of **{float(wkr['evals_median']):.0f} of 4096 "
-              f"distinguisher evaluations "
-              f"({float(wkr['evals_frac_median']) * 100:.1f}% of exhaustive)**, "
-              f"a **{float(wkr['speedup_vs_exhaustive']):.1f}x** wall-clock speed-up, "
-              f"for a success-rate change of "
-              f"{float(wkr['success_delta_pp']):+.1f} percentage points.")
+        hl = (f"at a fixed budget of "
+              f"**{float(wkr['evals_median']):.0f} of 4096 distinguisher "
+              f"evaluations ({float(wkr['evals_frac_median']) * 100:.0f}% of "
+              f"exhaustive)** the guided search returns the same subkey as the "
+              f"full scan **{float(wkr['agreement_with_exhaustive']) * 100:.1f}%** "
+              f"of the time, with a success-rate change of "
+              f"**{float(wkr['success_delta_pp']):+.1f} percentage points**. "
+              f"Uniform random sampling at the identical budget manages "
+              + (f"{float(next(r['agreement_with_exhaustive'] for r in headline_rows if r['method'] == 'random')) * 100:.1f}%."
+                 if any(r["method"] == "random" for r in headline_rows) else "far less.")
+              + " Section 6 gives the full budget curve, which is the result "
+                "this project rests on.")
     else:
         hl = "*(run the experiments to populate the headline numbers)*"
+
+    op_tbl = ""
+    op_rows = read_csv("calibration_operating_points.csv")
+    if op_rows:
+        body = [[f"{float(r['target_agreement']) * 100:.0f}%",
+                 f"{float(r['stop_posterior']):.3f}",
+                 f"{float(r['queries_median']):.0f}",
+                 f"{float(r['queries_frac_median']) * 100:.1f}%",
+                 f"{float(r['agreement']) * 100:.1f}%",
+                 f"{float(r['success']) * 100:.1f}%"] for r in op_rows]
+        op_tbl = md_table(["agreement target", "threshold", "queries (median)",
+                           "% of \\|GK\\|", "agreement reached", "success"], body)
+
+    op_tbl_des = ""
+    op_des = read_csv("exp4_des_l6_operating_points.csv")
+    if op_des:
+        body = [[f"{float(r['target_agreement']) * 100:.0f}%",
+                 f"{float(r['stop_posterior']):.3f}",
+                 f"{float(r['queries_median']):.0f}",
+                 f"{float(r['queries_frac_median']) * 100:.1f}%",
+                 f"{float(r['agreement']) * 100:.1f}%",
+                 f"{float(r['success']) * 100:.1f}%"] for r in op_des]
+        op_tbl_des = md_table(["agreement target", "threshold", "queries (median)",
+                               "% of \\|GK\\|", "agreement reached", "success"], body)
 
     doc = f"""# Faster key recovery for ML-aided linear cryptanalysis
 
@@ -349,6 +408,14 @@ Monte-Carlo against the real cipher:
 The piling-up prediction and the measurement agree to 3-4 decimal places, which
 is the check that the trail search, the mask algebra and the cipher agree with
 each other.
+
+A note on trial counts, since it changed a conclusion here. Everything below
+uses 60-150 trials per point. An earlier draft used 40, where the binomial
+error bar near the steep part of the success curve is about +/-20 pp -- large
+enough that the same configuration measured twice gave 87.5% and 50.0%, and
+large enough that one reported ordering reversed when the count was raised.
+Raising the trial count does not make the method perform worse; it makes the
+measurement honest.
 
 ### 4.2 Reproducing the paper's frameworks
 
@@ -461,10 +528,43 @@ search trajectories:
 
 {fig("fig3_budget_sensitivity.png", "Figure 3. Success rate and agreement with the exhaustive scan as a function of the query budget. The dashed line is exhaustive Algorithm 2, which always spends all 4096 evaluations.")}
 
-## 7. Early stopping
+## 7. Early stopping, and why we do not lead with it
 
-The stopping threshold is calibrated on a **separate seed range** from the
-trials reported above:
+Everything above is the **fixed-budget** mode: spend N evaluations, return the
+best. A natural extra is to let the search decide for itself when it is done.
+We built that (a threshold on how concentrated the posterior has become,
+calibrated on a **separate seed range** from the trials reported above) and it
+works -- but it is not where the result lives, for two measured reasons.
+
+**First, the cost depends very steeply on how much certainty you demand.**
+Quoting one tuned number here would be misleading, so here is the curve:
+
+*Phase 1, TinyDES-24:*
+
+{op_tbl}
+
+*Phase 2, real 8-round DES:*
+
+{op_tbl_des}
+
+On DES, going from 92% agreement to 100% costs 10% of the candidate space
+versus 40% -- a four-fold difference for the last eight percentage points. Any
+single headline figure hides that.
+
+**Second, at matched agreement the stopping rule is *worse* than simply
+choosing a budget.** On Phase 1 it reaches 96% agreement at a median of 54.4%
+of the space, where a fixed budget reaches 96% at 40%. The reason is
+instructive: exhaustive Algorithm 2 itself only succeeds about 60% of the time
+at this data complexity, so roughly 40% of trials contain no findable key at
+all. A fixed budget gives up on those. The stopping rule cannot distinguish
+"this one is hopeless" from "not found yet", so it keeps querying exactly where
+there is nothing to find, and those trials dominate its median.
+
+So the honest recommendation is: **use the budget mode, pick the budget from
+the curve in Section 6.** Early stopping is available, calibrated and reported,
+but it is an optional extra rather than the headline.
+
+The full threshold sweep, for completeness:
 
 {sec_stopping()}
 

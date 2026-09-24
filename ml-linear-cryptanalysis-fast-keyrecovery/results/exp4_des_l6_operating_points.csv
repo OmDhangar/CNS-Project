@@ -1,0 +1,5 @@
+target_agreement,reached,stop_posterior,queries_median,queries_mean,queries_p95,queries_frac_median,agreement,success
+0.8,True,0.7,259.0,574.2,1830.4,0.063232421875,0.8,0.72
+0.9,True,0.9,418.0,1014.32,3120.9999999999995,0.10205078125,0.92,0.8
+0.95,True,0.975,1660.0,1905.8,4096.0,0.4052734375,1.0,0.76
+0.99,True,0.975,1660.0,1905.8,4096.0,0.4052734375,1.0,0.76

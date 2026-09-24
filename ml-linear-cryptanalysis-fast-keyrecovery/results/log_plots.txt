@@ -1,0 +1,10 @@
+rendering figures:
+  D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results\figures\fig0_data_complexity.png
+  D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results\figures\fig1_wrong_key_profile.png
+  D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results\figures\fig2_score_landscape.png
+  D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results\figures\fig3_budget_sensitivity.png
+  D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results\figures\fig4_stopping_tradeoff.png
+D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\experiments\make_plots.py:239: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  axes[1].boxplot(data, labels=labels, vert=True, widths=0.5)
+  D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results\figures\fig5_query_distribution.png
+  D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results\figures\fig6_phase2_des.png

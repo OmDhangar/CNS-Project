@@ -84,8 +84,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--trials", type=int, default=200,
                     help="trials for the one-bit attacks")
-    ap.add_argument("--multi-trials", type=int, default=40,
-                    help="trials per point of the multi-bit N*t sweep")
+    ap.add_argument("--multi-trials", type=int, default=150,
+                    help="trials per point of the multi-bit N*t sweep.  The "
+                         "success curve is steep near bias^-2, so 40 trials "
+                         "leaves swings of +/-20 pp there; 150 brings the "
+                         "binomial error bar to about +/-4 pp.")
     ap.add_argument("--t", type=int, default=DEFAULT_T)
     ap.add_argument("--seed", type=int, default=90210)
     ap.add_argument("--force-train", action="store_true")

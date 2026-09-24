@@ -231,8 +231,13 @@ class AttackSetup:
             back[k] = self.back_lut[k][data.g_back]
         return front, back
 
-    def self_test(self, data: AttackData, candidates=(0, 1, 777, 4095)):
-        front, back = self.precompute_streams(data)
+    def self_test(self, data: AttackData, candidates=(0, 1, 777, 4095), streams=None):
+        """Check the fast path against the readable definition.
+
+        ``streams`` lets a caller that has already built them pass them in, so
+        the check costs four XORs rather than a second full precompute.
+        """
+        front, back = streams if streams is not None else self.precompute_streams(data)
         for c in candidates:
             kf, kb = self.split(c)
             slow = self.transform_bits(data, c)

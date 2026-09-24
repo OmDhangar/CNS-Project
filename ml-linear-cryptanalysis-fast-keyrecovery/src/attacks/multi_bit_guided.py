@@ -92,7 +92,8 @@ class WKRSearch:
 
     def __init__(self, setup, profile=None, n_init=8, budget=None,
                  stop_z=None, stop_posterior=DEFAULT_STOP_POSTERIOR,
-                 min_queries=32, a_grid=None, acquisition="map", seed=0):
+                 min_queries=32, a_grid=None, acquisition="map", seed=0,
+                 design="random", cover_level=0.25):
         self.setup = setup
         self.profile = profile if profile is not None else WrongKeyProfile(setup)
         self.n_cand = setup.n_candidates
@@ -110,6 +111,32 @@ class WKRSearch:
         self.a_grid = DEFAULT_A_GRID if a_grid is None else np.asarray(a_grid, float)
         self.acquisition = acquisition
         self.rng = np.random.default_rng(seed)
+
+        # Opening design.  "random" spends a handful of arbitrary probes and
+        # then exploits; "covering" spends its first queries on a probe set
+        # chosen offline so that *every* hypothesis is within `cover_level` of
+        # some probe.  The second is slower to find the key but much faster to
+        # become sure of it: a hypothesis no observation has touched keeps its
+        # prior, so an uncovered space is exactly what stops the posterior from
+        # concentrating without near-exhaustive testing.
+        self.design = design
+        self.cover_level = float(cover_level)
+        self._design_probes = None
+        self.design_info = {}
+        if design == "covering":
+            probes, info = self.profile.covering_design(level=self.cover_level)
+            self._design_probes = probes
+            self.design_info = info
+        elif design != "random":
+            raise ValueError(f"unknown design {design!r}")
+
+    def _opening_queue(self):
+        if self.design == "covering":
+            probes = list(self._design_probes)
+            self.rng.shuffle(probes)          # order must not favour low indices
+            return [int(c) for c in probes[: self.budget]]
+        n = min(self.n_init, self.budget)
+        return [int(c) for c in self.rng.choice(self.n_cand, size=n, replace=False)]
 
     @staticmethod
     def _auto_z(n_cand):
@@ -161,9 +188,8 @@ class WKRSearch:
         post = None
 
         t0 = time.perf_counter()
-        init = self.rng.choice(self.n_cand, size=min(self.n_init, self.budget),
-                               replace=False)
-        queue = list(int(c) for c in init)
+        queue = self._opening_queue()
+        n_opening = len(queue)
 
         while len(rec.order) < self.budget:
             if queue:
@@ -202,7 +228,7 @@ class WKRSearch:
                 diag_z.append(float(best_z))
                 diag_post.append(float(post.max()))
 
-            if len(rec.order) >= max(self.min_queries, self.n_init):
+            if len(rec.order) >= max(self.min_queries, n_opening // 2):
                 if self.stop_z is not None and best_z >= self.stop_z:
                     stopped_by = "extreme-value"
                     break
@@ -233,6 +259,8 @@ class WKRSearch:
                    "stopped_by": stopped_by,
                    "diag_best_z": diag_z,
                    "diag_max_posterior": diag_post,
+                   "design": self.design,
+                   "n_opening": n_opening,
                    "max_posterior": float(post.max()) if post is not None else float("nan")},
         )
 
@@ -398,7 +426,9 @@ class SkoptSearch:
 
 
 def make_search(method, setup, budget, seed=0, **kw):
-    if method == "wkr":
+    if method in ("wkr", "wkr-covering"):
+        if method == "wkr-covering":
+            kw.setdefault("design", "covering")
         return WKRSearch(setup, budget=budget, seed=seed, **kw)
     if method == "random":
         return RandomSearch(setup, budget=budget, seed=seed)

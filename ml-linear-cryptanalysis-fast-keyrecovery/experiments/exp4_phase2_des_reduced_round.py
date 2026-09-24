@@ -35,8 +35,9 @@ import os
 import numpy as np
 
 from common import (POSTERIOR_GRID, announce_choice, ensure_results,
-                    print_sweep, print_table, record_trajectories,
-                    select_threshold, summarise, sweep_threshold, write_csv)
+                    operating_points, print_operating_points, print_sweep,
+                    print_table, record_trajectories, select_threshold,
+                    summarise, sweep_threshold, write_csv)
 
 from src.attacks.candidate_space import AttackSetup
 from src.attacks.multi_bit_bruteforce import run_exhaustive
@@ -119,6 +120,11 @@ def main():
         cal_sweep = sweep_threshold(trajs, "max_post", POSTERIOR_GRID, space,
                                     "stop_posterior")
         print_sweep(cal_sweep, "stop_posterior")
+        pts = operating_points(cal_sweep)
+        print()
+        print("operating points -- cheapest threshold per agreement target:")
+        print_operating_points(pts)
+        write_csv(os.path.join(res, f"exp4_des_{args.config}_operating_points.csv"), pts)
         chosen = select_threshold(cal_sweep, cal_ex, args.tolerance_pp)
         announce_choice(chosen, cal_ex, args.tolerance_pp)
         stop_posterior = chosen["stop_posterior"]
