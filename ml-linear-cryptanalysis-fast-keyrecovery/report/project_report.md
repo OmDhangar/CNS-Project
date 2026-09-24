@@ -306,6 +306,30 @@ all. A fixed budget gives up on those. The stopping rule cannot distinguish
 "this one is hopeless" from "not found yet", so it keeps querying exactly where
 there is nothing to find, and those trials dominate its median.
 
+**Third, the obvious structural fix does not work, and we checked.** The
+suspicion was that the posterior cannot concentrate because most hypotheses are
+never touched, so we built the remedy: because the wrong-key response
+factorises, a probe set can be chosen *offline* such that every one of the 4096
+hypotheses is within a given response of some probe (256 probes reach all of
+them at 0.25 -- verified, not assumed). Spending the opening queries covering
+the space should then let the posterior concentrate. It does not:
+
+| opening design | chosen threshold | queries (median) | % of \|GK\| | queries (p95) | success | agreement |
+|---|---|---|---|---|---|---|
+| `random` | 0.900 | 2416 | 59.0% | 4096 | 64.0% | 96.0% |
+| `covering@0.25` | 0.975 | 2552 | 62.3% | 4096 | 64.0% | 96.0% |
+| `covering@0.375` | 0.999 | 4096 | 100.0% | 4096 | 68.0% | 100.0% |
+| `covering@0.5` | 1.000 | 4096 | 100.0% | 4096 | 68.0% | 100.0% |
+
+It is also worse at every small budget than a plain random opening. The
+reasoning was wrong in an instructive way: we assumed the bottleneck was
+*breadth*, but one probe already carries about **14.7 direct-test-equivalents**
+of information (`sum_h g_h^2 = 14.7`, computed from the profile). Breadth was
+never the limit. The limit is **contrast** -- neighbouring hypotheses receive
+nearly identical responses from every probe, so covering identifies the
+*neighbourhood* but cannot separate candidates within it, and the adaptive
+search already localises quickly.
+
 So the honest recommendation is: **use the budget mode, pick the budget from
 the curve in Section 6.** Early stopping is available, calibrated and reported,
 but it is an optional extra rather than the headline.

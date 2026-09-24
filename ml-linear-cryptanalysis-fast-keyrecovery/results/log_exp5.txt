@@ -1,0 +1,36 @@
+25 trials, N*t = 524,288, |GK| = 4096
+
+offline covering designs available:
+   level 0.250 ->   256 probes (  6.2% of |GK|)
+   level 0.375 ->   512 probes ( 12.5% of |GK|)
+   level 0.500 ->  1024 probes ( 25.0% of |GK|)
+
+  random           done (exhaustive success 68.0%)
+  covering@0.25    done (exhaustive success 68.0%)
+  covering@0.375   done (exhaustive success 68.0%)
+  covering@0.5     done (exhaustive success 68.0%)
+
+FIXED BUDGET -- which finds the key faster? (agreement with exhaustive)
+  budget   % |GK|          random   covering@0.25  covering@0.375    covering@0.5
+---------------------------------------------------------------------------------
+      82     2.0%           16.0%            4.0%            0.0%            4.0%
+     205     5.0%           52.0%            8.0%            0.0%            8.0%
+     307     7.5%           56.0%           32.0%            4.0%            8.0%
+     410    10.0%           56.0%           52.0%            8.0%            8.0%
+     614    15.0%           72.0%           80.0%           68.0%           12.0%
+     819    20.0%           84.0%           80.0%           84.0%           16.0%
+    1024    25.0%           88.0%           92.0%           88.0%           20.0%
+    2048    50.0%          100.0%          100.0%          100.0%           96.0%
+    4096   100.0%          100.0%          100.0%          100.0%          100.0%
+
+STOPPING -- which knows it has found the key sooner?
+design            threshold  queries(med)   % |GK|  queries(p95)   success  agreement
+-------------------------------------------------------------------------------------
+random                0.900          2416    59.0%          4096     64.0%      96.0%
+covering@0.25         0.975          2552    62.3%          4096     64.0%      96.0%
+covering@0.375        0.999          4096   100.0%          4096     68.0%     100.0%
+covering@0.5          1.000          4096   100.0%          4096     68.0%     100.0%
+
+cheapest to stop: random (59.0% of |GK|)
+
+wrote results to D:\CNS Project\ml-linear-cryptanalysis-fast-keyrecovery\results
