@@ -8,146 +8,117 @@
 This directory contains the core implementation, experimental scripts, result artifacts, and evaluation documents for the research paper:
 
 > **"Reducing Time Complexity in Machine-Learning-Aided Linear Cryptanalysis via Wrong-Key-Response-Guided Bayesian Key Search"**  
-> 📄 **Primary Paper for Evaluation**: [`report/RESEARCH_PAPER.md`](report/RESEARCH_PAPER.md) *(also available at repo root: [`../RESEARCH_PAPER.md`](../RESEARCH_PAPER.md))*
+> 📄 **Primary Paper for Evaluation**: [`report/RESEARCH_PAPER.md`](report/RESEARCH_PAPER.md) *(also at repo root: [`../RESEARCH_PAPER.md`](../RESEARCH_PAPER.md))*
 
 ---
 
-## 1. Context & Motivation (Paper Section I & III)
+## 1. Problem Formulation (Paper Section I & III)
 
-Linear cryptanalysis (Matsui, 1993) recovers key bits from a linear approximate expression $\alpha \cdot P \oplus \beta \cdot C = \gamma \cdot K$ holding with probability $p_r \neq 1/2$. 
+Linear cryptanalysis (Matsui, 1993) recovers subkey bits by finding linear approximations $\alpha \cdot P \oplus \beta \cdot C = \gamma \cdot K$ holding with probability $p_r \neq 1/2$. In *Cybersecurity* 2025, Hou, Ren, and Chen (HRC) recast this as distinguishing Bernoulli distributions using a neural network and Combined-Response Distinguisher (CRD).
 
-In *Cybersecurity* 2025, Hou, Ren, and Chen (HRC) recast this as distinguishing two Bernoulli distributions ($\text{Bern}(p_r)$ vs $\text{Bern}(1-p_r)$) using a neural network and Combined-Response Distinguisher (CRD).
-
-### The Bottleneck in HRC Algorithm 2
-To recover multiple subkey bits simultaneously on an 8-round DES attack, Algorithm 2 wraps the approximation in an extra cipher round at each end and **brute-forces all $L = 2^{12} = 4096$ candidate subkeys**, incurring $2^{12} \times N \times t / 8$ DES encryptions. Their conclusion named this as open work:
-> *"Designing a better key-recovery strategy matching neural distinguishers will be effective to reduce the time complexity."*
+### The Exhaustive Bottleneck
+For an 8-round DES attack, recovering multiple subkey bits simultaneously (Algorithm 2 in HRC) wraps the approximation in one extra round at each boundary ($k_f$ at Round 0, $k_b$ at Round 7), creating **$L = 2^{12} = 4096$ candidate subkeys**. Algorithm 2 evaluates **every candidate exhaustively** on the full $N \cdot t$ plaintext dataset ($2^{12} \times N \times t / 8$ DES encryptions).
 
 ---
 
-## 2. Our Core Contribution (Paper Section IV)
+## 2. Every Approach Investigated in the Research Paper
 
-This project replaces the exhaustive candidate loop with an informed, model-based search while keeping the neural distinguisher, CRD rule, and dataset unchanged.
+The research paper rigorously develops, implements, and evaluates **7 distinct approaches**:
 
-### The Closed-Form S-Box Response Kernel
-A wrong key guess in linear cryptanalysis is **not random noise**. The correlation factorises into independent S-box response kernels:
-$$\text{corr}(gk) = \text{corr}(gk^*) \cdot \rho_f(k_f \oplus k_f^*) \cdot \rho_b(k_b \oplus k_b^*)$$
-where $\rho_f(\Delta)$ and $\rho_b(\Delta)$ depend **exclusively on the cipher's S-box lookup tables and linear masks**:
-$$\rho(\Delta) = \frac{1}{2^m} \sum_{u \in \{0,1\}^m} (-1)^{\nu \cdot [S(u) \oplus S(u \oplus \Delta)]}$$
+### 1. Wrong-Key-Response-Guided Bayesian Search (Fixed Budget Mode) — *Proposed Primary*
+* **Paper Reference**: Section IV-A, IV-B, VI-B | **Source**: [`src/attacks/multi_bit_guided.py`](src/attacks/multi_bit_guided.py)
+* **Mathematical Basis**: Wrong key guesses exhibit a deterministic correlation profile that factorises into closed-form S-box kernels:
+  $$\text{corr}(gk) = \text{corr}(gk^*) \cdot \rho_f(k_f \oplus k_f^*) \cdot \rho_b(k_b \oplus k_b^*)$$
+  where $\rho_f, \rho_b$ are computed offline in $<1\text{ ms}$ before spending any queries.
+* **Mechanism**: Maintains Bayesian accumulators ($P, Q, V$) in $O(|GK|)$ time ($<0.2\text{ ms}$ per query), querying the candidate with the highest posterior until budget $B$ is reached.
+* **Outcome**: Reaches **98.7% agreement** with full scan on TinyDES-24 using only **54.4% of queries (+0.7 pp success)**, and **92.0% agreement** on Real 8-round DES using only **10.2% of queries (418 / 4096)**.
 
-* **Precomputation Cost**: Computed offline in $2 \times 64 \times 64 = 8192$ operations ($<1\text{ ms}$) **before spending a single plaintext query**.
-* **Bayesian Update**: Maintains accumulators $\mathbf{P}, \mathbf{Q}, \mathbf{V}$ in $O(|GK|)$ time ($<0.2\text{ ms}$ on CPU), far cheaper than a single neural network inference pass.
+### 2. Wrong-Key-Response-Guided Bayesian Search (Calibrated Stopping Mode) — *Proposed Variant*
+* **Paper Reference**: Section IV-B, VI-B, VII | **Source**: [`src/attacks/multi_bit_guided.py`](src/attacks/multi_bit_guided.py), [`experiments/calibrate_stopping.py`](experiments/calibrate_stopping.py)
+* **Mechanism**: Dynamically terminates when the posterior on an evaluated candidate crosses a threshold $\tau$ calibrated on an independent seed range.
+* **Outcome**: Reaches 97.3% agreement at 64.3% queries on TinyDES-24. *(Paper finding: Fixed budget mode dominates calibrated stopping because stopping rules over-query hopeless trials where no key signal exists).*
 
----
+### 3. Exhaustive Candidate Scan (Hou et al. 2025 Algorithm 2) — *Baseline*
+* **Paper Reference**: Section III-A, III-B | **Source**: [`src/attacks/multi_bit_bruteforce.py`](src/attacks/multi_bit_bruteforce.py)
+* **Mechanism**: Tests all 4096 candidate subkeys across all $N \cdot t$ samples using the Combined-Response Distinguisher (CRD) $S(gk) = |w_0(gk)|$.
+* **Outcome**: 72.0% success rate on TinyDES-24, 58.3% on real DES; always spends 100% of candidate queries (4096 / 4096).
 
-## 3. Results Summary (Paper Section VI)
+### 4. Classical Matsui Algorithm 2 — *Classical Reference*
+* **Paper Reference**: Section II-C, VI-A | **Source**: [`src/distinguisher/crd.py`](src/distinguisher/crd.py)
+* **Mechanism**: Classical linear cryptanalysis parity counter evaluated via an 8192-cell joint histogram.
+* **Outcome**: Provides the classical cryptanalytic benchmark ceiling (72.0%–96.0% success).
 
-### TinyDES-24 (8 rounds, $|GK|=4096$, 150 independent trials)
-* **Exhaustive Scan (HRC)**: $72.0\% \pm 7.2$ success, 4096 evaluations ($1.00\times$).
-* **Guided WKR (Ours)**: **$72.7\% \pm 7.1$ success (+0.7 pp)**, **$98.7\%$ agreement** with exhaustive scan using only **2227 evaluations (54.4% of space)** ($1.88\times$ speedup).
-* **Random Sampling Control**: $38.7\%$ success ($54.7\%$ agreement) at the identical budget.
-* **Generic BO (`scikit-optimize`) Control**: $10.0\%$ success, $9\times$ slower than brute force due to $O(n^3)$ GP kernel updates.
+### 5. Uniform Random Sampling Control — *Control 1*
+* **Paper Reference**: Section V-B, VI-B | **Source**: [`experiments/exp2_guided_vs_bruteforce.py`](experiments/exp2_guided_vs_bruteforce.py)
+* **Mechanism**: Uniform candidate sampling without replacement at the exact same query budget as Guided WKR (no model, no ordering).
+* **Outcome**: Achieves only **38.7% success** (54.7% agreement) at 54.4% budget, proving the gain comes from the S-box response model rather than query reduction alone.
 
-### Real 8-Round DES (FIPS test vector verified, 60 trials)
-* **Exhaustive Scan**: $58.3\%$ success, 4096 evaluations.
-* **Guided WKR (90% Agreement Target)**: **$80.0\%$ success**, **$92.0\%$ agreement** using only **418 evaluations (10.2% of space)**.
-* **Guided WKR (95% Agreement Target)**: **$76.0\%$ success**, **$100.0\%$ agreement** using **1660 evaluations (40.5% of space)**.
+### 6. Sequential Scan with Early Stopping Control — *Control 2*
+* **Paper Reference**: Section V-B, VI-B | **Source**: [`src/attacks/multi_bit_bruteforce.py`](src/attacks/multi_bit_bruteforce.py)
+* **Mechanism**: Index-order candidate scan with early stopping rule $z = \sqrt{2 \ln |GK|}$ (stopping early without a spatial model).
+* **Outcome**: Achieves only **7.3% success** (8.0% agreement), showing naive early stopping fails without domain structure.
 
-### Repaired Baseline Pipeline Defects (Paper Section VII)
-1. **SGD Logit Variance**: Replaced standard training with Exponential Moving Average (EMA) weight averaging, lifting logit variance explained by the sufficient statistic ($R^2$) from $0.68 \to 0.94$, signal retention from $0.83 \to 0.97$, and attack success from $37.5\% \to 87.5\%$.
-2. **One-Bit Decision Asymmetry**: Replaced $\sum \log_2(v/(1-v))$ with antisymmetric $[\text{logit}(x) - \text{logit}(1-x)]/2$, eliminating systematic network bias and recovering $+13.3\text{ pp}$ on approximation $L_4$.
+### 7. Generic Bayesian Optimization (`scikit-optimize` GP) — *Negative Result 1*
+* **Paper Reference**: Section V-B, VIII | **Source**: [`experiments/exp2_guided_vs_bruteforce.py`](experiments/exp2_guided_vs_bruteforce.py)
+* **Mechanism**: Gaussian Process regression treating the 12 key bits as a black-box hypercube.
+* **Outcome**: **9× slower than exhaustive scan** (51.76 s vs 5.85 s) due to $O(n^3)$ GP kernel refits; achieves only 10.0% success.
 
----
+### 8. Covering Probe Design Search — *Negative Result 2*
+* **Paper Reference**: Section VIII | **Source**: [`experiments/exp5_opening_design.py`](experiments/exp5_opening_design.py)
+* **Mechanism**: Offline selection of a minimal covering set of probe candidates before Bayesian exploitation.
+* **Outcome**: Performs worse than random opening at small budgets due to the contrast bottleneck in linear cryptanalysis.
 
-## 4. Repository Structure
+### 9. Distinguisher Weight Averaging (EMA) — *Pipeline Repair 1*
+* **Paper Reference**: Section VII-A | **Source**: [`src/distinguisher/model.py`](src/distinguisher/model.py)
+* **Mechanism**: Averages weights over the second half of training to remove SGD logit noise.
+* **Outcome**: Increases popcount logit variance explained ($R^2$) from **0.68 to 0.94**, boosting multi-bit attack success from **37.5% to 87.5%**.
 
-```
-ml-linear-cryptanalysis-fast-keyrecovery/
-├── report/
-│   ├── RESEARCH_PAPER.md           <- Complete IEEE-style Research Paper (Evaluated document)
-│   ├── FACULTY_SUMMARY.md          <- Evaluation summary: algorithm, methodology, result tables
-│   ├── approach_and_findings.md    <- Narrative walkthrough & error analysis
-│   ├── project_report.md           <- Auto-generated report built from results/ CSVs
-│   └── build_report.py             <- Script generating project_report.md
-├── src/
-│   ├── ciphers/
-│   │   ├── toy_feistel.py          <- TinyDES-24: vectorised Feistel cipher + mask algebra
-│   │   └── des.py                  <- Real DES (reduced-round), FIPS test vector verified
-│   ├── linear_analysis/
-│   │   ├── bias_search.py          <- LAT + beam search over linear trails + Monte Carlo check
-│   │   ├── approximations.py       <- Approximation tables for TinyDES-24 (L3-L6)
-│   │   └── known_masks_des.py      <- Matsui's L3/L5/L6 masks with orientation resolved
-│   ├── distinguisher/
-│   │   ├── model.py                <- PyTorch Residual MLP with EMA weight averaging
-│   │   ├── crd.py                  <- CRD score rule, CandidateScorer, and Matsui classical scorer
-│   │   ├── data_gen.py             <- Parity sample generator and Bayes-optimal references
-│   │   └── train.py                <- Distinguisher training loop with disk caching
-│   └── attacks/
-│   │   ├── candidate_space.py      <- Multi-bit attack geometry and candidate representations
-│   │   ├── wrong_key_profile.py    <- Closed-form S-box profile computation (rho_f, rho_b)
-│   │   ├── multi_bit_bruteforce.py <- HRC Algorithm 2 (exhaustive baseline)
-│   │   └── multi_bit_guided.py     <- Guided Bayesian search (our contribution)
-├── experiments/
-│   ├── exp1_reproduce_baseline.py  <- Baseline reproduction and operating point selection
-│   ├── exp2_guided_vs_bruteforce.py<- Headline head-to-head evaluation (Table II)
-│   ├── exp3_budget_sensitivity.py  <- Budget curve evaluation (Table III)
-│   ├── exp4_phase2_des_reduced_round.py <- Real 8-round DES evaluation (Table IV & V)
-│   ├── exp5_opening_design.py      <- Covering probe design evaluation (negative result)
-│   ├── calibrate_stopping.py       <- Stopping threshold calibration on disjoint seeds
-│   └── make_plots.py               <- Figure generation
-├── tests/
-│   ├── test_cipher_and_masks.py    <- 15 tests: DES FIPS vectors, mask algebra, LAT
-│   └── test_attacks.py             <- 15 tests: Scorer bit-exactness, profile fidelity, R^2
-├── results/                        <- CSV logs and generated figures (PNG)
-├── requirements.txt                <- Python dependencies
-└── run_all.py                      <- Master execution runner (--preset demo | standard | full)
-```
+### 10. Antisymmetric Logit Differential Scoring — *Pipeline Repair 2*
+* **Paper Reference**: Section VII-B | **Source**: [`src/distinguisher/crd.py`](src/distinguisher/crd.py)
+* **Mechanism**: Corrects the one-bit decision rule using $\frac{1}{2}\sum [\text{logit}(x) - \text{logit}(1-x)]$.
+* **Outcome**: Eliminates systematic network offset (+2.8e-3/sample), recovering **+13.3 pp accuracy** on approximation $L_4$.
 
 ---
 
-## 5. Execution & Reproduction Guide
+## 3. Comparative Results (Paper Table II)
 
-### Environment Setup
+| Approach | Category | Success Rate | Agreement with Full Scan | Median Queries | % of Space | Eval Speedup | Wall-Clock Time |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Exhaustive Scan (Hou et al.)** | Baseline | 72.0% $\pm$ 7.2 | 100.0% | 4096 | 100.0% | $1.00\times$ | 5.85 s |
+| **Guided WKR Budget (Ours)** | **Proposed** | **72.7% $\pm$ 7.1** | **98.7%** | **2227** | **54.4%** | **$1.88\times$** | **3.11 s** |
+| **Guided WKR Calibrated Stop** | **Proposed** | 72.7% $\pm$ 7.1 | 97.3% | 2634 | 64.3% | $1.61\times$ | 3.64 s |
+| **Uniform Random Control** | Control | 38.7% $\pm$ 7.8 | 54.7% | 2227 | 54.4% | $1.88\times$ | 2.18 s |
+| **Sequential + Early Stop** | Control | 7.3% $\pm$ 4.2 | 8.0% | 204 | 5.0% | $15.02\times$ | 0.39 s |
+| **Generic BO (`scikit-optimize`)**| Control (BO) | 10.0% $\pm$ 18.6 | 10.0% | 99 | 2.4% | $0.11\times$ | 51.76 s |
+| **Real DES Guided WKR (90% target)** | **Real DES** | **80.0%** | **92.0%** | **418** | **10.2%** | **$9.80\times$** | **0.90 s** |
+
+---
+
+## 4. Code & Paper Cross-Reference
+
+| Paper Section | Topic | Code Implementation | Result Artifact |
+| :--- | :--- | :--- | :--- |
+| **Section I & III** | Baseline Algorithm 2 | [`src/attacks/multi_bit_bruteforce.py`](src/attacks/multi_bit_bruteforce.py) | [`results/exp1_multi_bit.csv`](results/exp1_multi_bit.csv) |
+| **Section IV-A** | Closed-Form Profiles $\rho_f, \rho_b$ | [`src/attacks/wrong_key_profile.py`](src/attacks/wrong_key_profile.py) | [`results/figures/fig1_wrong_key_profile.png`](results/figures/fig1_wrong_key_profile.png) |
+| **Section IV-B** | WKR Bayesian Search | [`src/attacks/multi_bit_guided.py`](src/attacks/multi_bit_guided.py) | [`results/exp2_summary.csv`](results/exp2_summary.csv) |
+| **Section V** | Ciphers (TinyDES & DES) | [`src/ciphers/toy_feistel.py`](src/ciphers/toy_feistel.py), [`src/ciphers/des.py`](src/ciphers/des.py) | `tests/test_cipher_and_masks.py` |
+| **Section VI-B** | Head-to-Head Comparison | [`experiments/exp2_guided_vs_bruteforce.py`](experiments/exp2_guided_vs_bruteforce.py) | [`results/exp2_per_trial.csv`](results/exp2_per_trial.csv) |
+| **Section VI-C** | Budget Sensitivity Curve | [`experiments/exp3_budget_sensitivity.py`](experiments/exp3_budget_sensitivity.py) | [`results/figures/fig3_budget_sensitivity.png`](results/figures/fig3_budget_sensitivity.png) |
+| **Section VI-D** | Real 8-Round DES Attack | [`experiments/exp4_phase2_des_reduced_round.py`](experiments/exp4_phase2_des_reduced_round.py) | [`results/figures/fig6_phase2_des.png`](results/figures/fig6_phase2_des.png) |
+| **Section VII** | Distinguisher EMA & Antisymmetry | [`src/distinguisher/model.py`](src/distinguisher/model.py), [`src/distinguisher/crd.py`](src/distinguisher/crd.py) | [`results/exp1_one_bit.csv`](results/exp1_one_bit.csv) |
+| **Section VIII** | Negative Results (BO & Probes) | [`experiments/exp5_opening_design.py`](experiments/exp5_opening_design.py) | [`results/exp5_opening_design.csv`](results/exp5_opening_design.csv) |
+
+---
+
+## 5. Quickstart & Reproduction
+
 ```bash
 pip install -r requirements.txt
-```
 
-### Reproducing Experiments
-```bash
-# 1. Quick demo (~10 min, runs all pipeline stages on small trial count):
+# Run demo (~10 min):
 python run_all.py --preset demo
 
-# 2. Standard run (~45 min):
-python run_all.py --preset standard
-
-# 3. Full reproduction (~3 hours, matches exact paper trial counts):
-python run_all.py --preset full
-```
-
-### Step-by-Step Execution
-```bash
-# Verify invariants and cipher correctness:
+# Run all 30 automated test assertions:
 python -m tests.test_cipher_and_masks
 python -m tests.test_attacks
-
-# Run individual experiments:
-python experiments/exp1_reproduce_baseline.py
-python experiments/calibrate_stopping.py
-python experiments/exp2_guided_vs_bruteforce.py --trials 100
-python experiments/exp3_budget_sensitivity.py --trials 60
-python experiments/exp4_phase2_des_reduced_round.py --config l6 --trials 60
-python experiments/exp5_opening_design.py --trials 50
-
-# Generate figures and build report:
-python experiments/make_plots.py
-python report/build_report.py
 ```
-
----
-
-## 6. Evaluation Verification Checklist
-
-- [x] **Primary Research Paper**: Full IEEE manuscript in [`report/RESEARCH_PAPER.md`](report/RESEARCH_PAPER.md).
-- [x] **Theoretical Derivation**: Closed-form S-box correlation profile proof ($\rho_f, \rho_b$) in Section IV-A.
-- [x] **Implementation Fidelity**: Shared `CandidateScorer` object guarantees identical scoring between baseline and search.
-- [x] **Cipher Invariants**: Real DES verified against FIPS 46-3 (`DES(0x0123456789ABCDEF, 0x133457799BBCDFF1) = 0x85E813540F0AB405`).
-- [x] **Reproducibility**: Master script `run_all.py` and automated test suite with 30 passing assertions.
